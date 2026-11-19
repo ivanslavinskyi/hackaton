@@ -16,14 +16,19 @@ class MarketSignal(BaseModel):
     source_id: str = Field(min_length=1)
     source_url: str
 
-    published_at: date
+    published_at: Optional[date] = None
     period_start: date
     period_end: date
 
     region: str
-    occupation: str
 
+    # Occupation-related information
+    occupation: Optional[str] = None
     skill_id: Optional[str] = None
+
+    # Industry-related information
+    industry: Optional[str] = None
+    industry_code: Optional[str] = None
 
     metric: str
     value: float

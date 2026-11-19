@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, status
 from app import database
 from app.schemas import MarketSignal
 
+from app.services.fso_connector import fetch_fso_signals
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -67,3 +68,32 @@ def create_signal(signal: MarketSignal):
         "message": "Market signal created",
         "id": signal.id
     }
+
+@app.post("/api/sources/fso/import")
+def import_fso_signals(period: str = "2026Q2"):
+    try:
+        signals = fetch_fso_signals(period)
+
+        for signal in signals:
+            database.save_or_update_signal(signal)
+
+        return {
+            "source": "fso",
+            "period": period,
+            "imported": len(signals),
+            "signal_ids": [signal.id for signal in signals]
+        }
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error)
+        )
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"FSO import failed: {error}"
+        )
+
+        
