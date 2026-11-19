@@ -23,8 +23,8 @@ def client(tmp_path, monkeypatch):
 def sample_signal():
     return {
         "id": "signal_api_001",
-        "source_id": "hslu_2026",
-        "source_url": "https://example.com/report",
+        "source_id": "hslu",
+        "source_url": "https://www.hslu.ch/de-ch/hochschule-luzern/ueber-uns/medien/medienmitteilungen/2026/10/08/ai-job-report-2026/",
         "published_at": "2026-10-08",
         "period_start": "2025-07-01",
         "period_end": "2026-06-30",

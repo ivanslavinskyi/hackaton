@@ -5,8 +5,9 @@ from fastapi import FastAPI, HTTPException, status
 
 from app import database
 from app.schemas import MarketSignal
-
 from app.services.fso_connector import fetch_fso_signals
+from app.services.data_quality import validate_signals
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -53,6 +54,14 @@ def get_signal(signal_id: str):
     status_code=status.HTTP_201_CREATED
 )
 def create_signal(signal: MarketSignal):
+    quality = validate_signals([signal])
+
+    if not quality["valid"]:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=quality
+        )
+
     try:
         database.save_signal(signal)
     except Exception as error:
@@ -66,23 +75,38 @@ def create_signal(signal: MarketSignal):
 
     return {
         "message": "Market signal created",
-        "id": signal.id
+        "id": signal.id,
+        "quality": quality
     }
+
 
 @app.post("/api/sources/fso/import")
 def import_fso_signals(period: str = "2026Q2"):
     try:
         signals = fetch_fso_signals(period)
 
-        for signal in signals:
-            database.save_or_update_signal(signal)
+        quality = validate_signals(signals)
+
+        if not quality["valid"]:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=quality
+            )
+
+        database.save_or_update_signals(signals)
 
         return {
             "source": "fso",
             "period": period,
             "imported": len(signals),
-            "signal_ids": [signal.id for signal in signals]
+            "signal_ids": [
+                signal.id for signal in signals
+            ],
+            "quality": quality
         }
+
+    except HTTPException:
+        raise
 
     except ValueError as error:
         raise HTTPException(
@@ -95,5 +119,3 @@ def import_fso_signals(period: str = "2026Q2"):
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"FSO import failed: {error}"
         )
-
-        

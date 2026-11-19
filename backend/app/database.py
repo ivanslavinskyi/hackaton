@@ -177,3 +177,50 @@ def get_all_signals():
         ).fetchall()
 
     return [dict(row) for row in rows]
+
+
+def save_or_update_signals(signals):
+    """
+    Save or update a batch of signals in one transaction.
+    Either the entire batch is committed or none of it is.
+    """
+
+    with get_connection() as conn:
+        for signal in signals:
+            data = signal.model_dump(mode="json")
+
+            conn.execute("""
+                INSERT INTO market_signals (
+                    id, source_id, source_url, published_at,
+                    period_start, period_end, region, occupation,
+                    skill_id, industry, industry_code,
+                    metric, value, unit, comparison_period,
+                    evidence, limitations, reuse_status
+                )
+                VALUES (
+                    :id, :source_id, :source_url, :published_at,
+                    :period_start, :period_end, :region, :occupation,
+                    :skill_id, :industry, :industry_code,
+                    :metric, :value, :unit, :comparison_period,
+                    :evidence, :limitations, :reuse_status
+                )
+                ON CONFLICT(id) DO UPDATE SET
+                    source_id = excluded.source_id,
+                    source_url = excluded.source_url,
+                    published_at = excluded.published_at,
+                    period_start = excluded.period_start,
+                    period_end = excluded.period_end,
+                    region = excluded.region,
+                    occupation = excluded.occupation,
+                    skill_id = excluded.skill_id,
+                    industry = excluded.industry,
+                    industry_code = excluded.industry_code,
+                    metric = excluded.metric,
+                    value = excluded.value,
+                    unit = excluded.unit,
+                    comparison_period = excluded.comparison_period,
+                    evidence = excluded.evidence,
+                    limitations = excluded.limitations,
+                    reuse_status = excluded.reuse_status
+            """, data)
+
