@@ -1,0 +1,35 @@
+[
+    {
+      "id": "hslu",
+      "name": "Hochschule Luzern",
+      "source_url": "https://www.hslu.ch/de-ch/hochschule-luzern/ueber-uns/medien/medienmitteilungen/2026/10/08/ai-job-report-2026/",
+      "source_type": "research_report",
+      "description": "Swiss AI Jobs Report 2026",
+      "update_frequency": "annual",
+      "geographic_scope": "Switzerland",
+      "data_format": "web",
+      "reuse_status": "pending"
+    },
+    {
+      "id": "kof",
+      "name": "KOF Swiss Job Tracker",
+      "source_url": "https://kof.ethz.ch/en/forecasts-and-indicators/indicators/swiss-job-tracker.html",
+      "source_type": "statistical_data",
+      "description": "Swiss online job market indicators",
+      "update_frequency": "periodic",
+      "geographic_scope": "Switzerland",
+      "data_format": "xlsx",
+      "reuse_status": "pending"
+    },
+    {
+      "id": "seco",
+      "name": "SECO Labour Market Statistics",
+      "source_url": "https://www.seco.admin.ch/en/labour-market-statistics",
+      "source_type": "official_statistics",
+      "description": "Swiss official labour market statistics",
+      "update_frequency": "monthly",
+      "geographic_scope": "Switzerland",
+      "data_format": "csv",
+      "reuse_status": "pending"
+    }
+  ]
