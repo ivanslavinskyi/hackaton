@@ -19,7 +19,7 @@
       "update_frequency": "periodic",
       "geographic_scope": "Switzerland",
       "data_format": "xlsx",
-      "reuse_status": "pending"
+      "reuse_status": "permission_required"
     },
     {
       "id": "seco",
@@ -31,5 +31,17 @@
       "geographic_scope": "Switzerland",
       "data_format": "csv",
       "reuse_status": "pending"
+    },
+    {
+      "id": "fso",
+      "name": "Federal Statistical Office",
+      "source_url": "https://statistik.admin.ch/en/asset/36832599",
+      "source_type": "official_statistics",
+      "description": "Quarterly job vacancies by economic divisions",
+      "update_frequency": "quarterly",
+      "geographic_scope": "Switzerland",
+      "data_format": "pxweb_api",
+      "reuse_status": "open_by"
     }
+
   ]
