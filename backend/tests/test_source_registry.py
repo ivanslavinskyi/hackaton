@@ -5,7 +5,16 @@ from app.services.source_registry import load_sources, get_source
 def test_load_sources():
     sources = load_sources()
 
-    assert len(sources) == 4
+    source_ids = {source.id for source in sources}
+
+    assert {
+        "hslu",
+        "kof",
+        "seco",
+        "fso",
+        "uzh_job_index",
+        "esco",
+    }.issubset(source_ids)
 
 
 def test_get_hslu_source():

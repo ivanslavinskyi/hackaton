@@ -42,6 +42,29 @@
       "geographic_scope": "Switzerland",
       "data_format": "pxweb_api",
       "reuse_status": "open_by"
+    },
+    {
+      "id": "uzh_job_index",
+      "name": "Adecco Group Swiss Job Market Index (UZH)",
+      "source_url": "https://www.stellenmarktmonitor.uzh.ch/en/indices/asjmi.html",
+      "source_type": "official_research_index",
+      "description": "Quarterly Swiss labour-market index; relative index values, not absolute vacancy counts.",
+      "update_frequency": "quarterly",
+      "geographic_scope": "Switzerland",
+      "data_format": "xlsx",
+      "reuse_status": "pending",
+      "last_checked": null
+    },
+    {
+      "id": "esco",
+      "name": "European Skills, Competences, Qualifications and Occupations",
+      "source_url": "https://esco.ec.europa.eu/en/use-esco/use-esco-services-api/esco-web-service-api",
+      "source_type": "occupation_skill_taxonomy",
+      "description": "Multilingual classification of occupations and skills. Taxonomy, not a time series of labour demand.",
+      "update_frequency": "versioned_release",
+      "geographic_scope": "Europe; use as classification vocabulary for Swiss market data",
+      "data_format": "REST_JSON",
+      "reuse_status": "open_by",
+      "last_checked": null
     }
-
   ]

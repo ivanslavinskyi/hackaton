@@ -1,4 +1,3 @@
-
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Query, status
@@ -11,6 +10,7 @@ from app.services.fso_connector import (
     generate_quarters,
 )
 from app.services.data_quality import validate_signals
+from app.services.market_pulse import get_market_pulse
 
 
 @asynccontextmanager
@@ -74,7 +74,6 @@ def create_signal(signal: MarketSignal):
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Market signal already exists",
             )
-
         raise
 
     return {
@@ -115,13 +114,11 @@ def import_fso_signals(period: str = "2026Q2"):
 
     except HTTPException:
         raise
-
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error),
         )
-
     except Exception as error:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -136,7 +133,6 @@ def import_fso_history(
 ):
     try:
         quarters = generate_quarters(start_period, end_period)
-
         signals = fetch_fso_history(start_period, end_period)
 
         if not signals:
@@ -153,7 +149,6 @@ def import_fso_history(
                 detail=quality,
             )
 
-        # Save the complete batch only after all signals pass validation.
         database.save_or_update_signals(signals)
 
         return {
@@ -168,15 +163,18 @@ def import_fso_history(
 
     except HTTPException:
         raise
-
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error),
         )
-
     except Exception as error:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"FSO historical import failed: {error}",
         )
+
+
+@app.get("/api/analytics/market-pulse")
+def market_pulse():
+    return get_market_pulse()
