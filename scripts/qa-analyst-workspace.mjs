@@ -73,7 +73,7 @@ try {
   await expect(page.locator('.message-assistant').last().locator('.answer-views button.active')).toHaveCount(1);
   await expect(page.getByRole('button',{name:`UI ${type} · ${sourceId}`,exact:true}).last()).toHaveAttribute('aria-pressed','true');
  };
- await page.getByRole('button',{name:'Explore the market',exact:true}).click();
+ await page.getByRole('link',{name:'Explore the market',exact:true}).click();
  for(const source of data.inventory.sources){
   latest=await act(()=>page.getByLabel('Source',{exact:true}).selectOption(source.id));
   assert.ok(latest.series.every(s=>s.sourceId===source.id));
@@ -101,11 +101,11 @@ try {
   checks.push({source:source.id,views:latest.allowedViews,geography:latest.query.geography,measure:latest.query.measure});
  }
  // Overview -> explorer -> analyst preserves its exact query.
- await page.getByRole('button',{name:'Market overview',exact:true}).click();
+ await page.getByRole('link',{name:'Market overview',exact:true}).click();
  latest=await act(()=>page.locator('.source-signal').filter({hasText:'BFS'}).getByRole('button',{name:'Explore this indicator',exact:true}).click());
  await send();
  // Library -> explorer -> analyst uses the saved reported-value selection.
- await page.getByRole('button',{name:'Data library',exact:true}).click();
+ await page.getByRole('link',{name:'Data library',exact:true}).click();
  const item=data.catalog.find(c=>c.sourceId.startsWith('sem_')&&c.geography==='CH'&&c.metric==='registry_employment_rate');
  await page.getByLabel('Search all indicators').fill(item.label);
  latest=await act(()=>page.locator('.library-table tbody tr').first().getByRole('button').click());

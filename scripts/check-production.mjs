@@ -107,7 +107,9 @@ try {
   report.checks.push({name:phase,status:'passed',crossOrigin:403,invalidParameters:400,removedSource:400});
 
   phase='public assets and sensitive file isolation';
-  const html=await(await request(production,'/')).text();
+  const root=await request(production,'/',{status:307});
+  assert.equal(new URL(root.headers.get('location'),production).pathname,'/overview');
+  const html=await(await request(production,'/overview')).text();
   assert.match(html,/Market Radar/);
   const styles=[...new Set([...html.matchAll(/<link\b[^>]*href="([^"]+\.css(?:\?[^"]*)?)"/g)].map(match=>match[1]))];
   assert.ok(styles.length,'The page references a CSS asset.');

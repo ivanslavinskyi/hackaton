@@ -1,2 +1,2 @@
-import MarketRadar from '@/components/market-radar';
-export default function Page() { return <MarketRadar/>; }
+import { redirect } from 'next/navigation';
+export default function Page() { redirect('/overview'); }

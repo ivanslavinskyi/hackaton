@@ -10,7 +10,7 @@ try{
  await page.getByRole('heading',{name:'The market, from more than one angle.'}).waitFor();
  assert.equal(await page.locator('.source-signal').count(),6);
  await page.screenshot({path:'test-results/full-data-overview.png',fullPage:true});
- await page.getByRole('button',{name:'Data library',exact:true}).click();
+ await page.getByRole('link',{name:'Data library',exact:true}).click();
  await page.getByRole('heading',{name:'168 available indicators'}).waitFor();
  await page.screenshot({path:'test-results/full-data-library.png',fullPage:true});
  const sourceChecks=[['BFS','fso_jobstat_vacancies_2026q2'],['SEM','sem_asyl_202610_6_22'],['Eurostat','eurostat_isoc_sk_oja2_ch_20261116']];
@@ -22,7 +22,7 @@ try{
  assert.ok(data.catalog.some(s=>s.geography==='CH-TG'&&s.sourceId.startsWith('sem_')),'Other sources may still describe Thurgau canton');
  for(const [label,id] of sourceChecks){
   const title=data.inventory.sources.find(s=>s.id===id).title;
-  await page.getByRole('button',{name:'Data library',exact:true}).click();
+  await page.getByRole('link',{name:'Data library',exact:true}).click();
   await page.locator('.library-source-card').filter({hasText:title}).click();
   await page.locator('.library-table tbody tr').first().getByRole('button').click();
   await page.locator('.chart-loading-bar').waitFor({state:'hidden'});
@@ -36,7 +36,7 @@ try{
  assert.equal(await page.getByLabel('Geography',{exact:true}).inputValue(),'CH-FR');
  assert.equal(await page.locator('.notice-error').count(),0);
  console.log('Changing national source to regional-only Fribourg chooses CH-FR');
- await page.getByRole('button',{name:'Data library',exact:true}).click();
+ await page.getByRole('link',{name:'Data library',exact:true}).click();
  await page.getByLabel('Library coverage').selectOption('all');
  await page.locator('.library-source-card').filter({hasText:data.inventory.sources.find(s=>s.id==='fribourg_ogd_rav_2026_10').title}).click();
  await page.locator('.library-table tbody tr').first().getByRole('button').click();
@@ -45,7 +45,7 @@ try{
  await page.getByRole('button',{name:'Sources and coverage for this chart',exact:true}).click();
  await page.getByRole('heading',{name:'Sources & coverage',exact:true}).waitFor();
  await page.getByRole('button',{name:'Close sources panel',exact:true}).click();
- await page.getByRole('button',{name:'Data library',exact:true}).click();
+ await page.getByRole('link',{name:'Data library',exact:true}).click();
  await page.setViewportSize({width:390,height:844});
  await page.screenshot({path:'test-results/full-data-mobile.png',fullPage:true});
  const dimensions=await page.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth}));

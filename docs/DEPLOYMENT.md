@@ -104,7 +104,7 @@ If the initial MVP cutover fails before acceptance, stop the new `market-radar` 
 
 This document describes the reproducible deployment procedure. The deployment operator records the actual revision, image tag, verification results and rollback target after the release is accepted.
 
-## Initial deployed release â€” 21 November 2026
+## Initial deployed release — 21 November 2026
 
 - Public URL: `https://hackatonprojekt.net`; health: `/healthz`.
 - Application baseline: `461dbac22dbd6987ae3a40351f8a0993c1c82e99`; the deployment commit also adds the brand favicon. The exact source revision and image are recorded in the server release's `deployment-record.json`.
@@ -129,10 +129,17 @@ curl --fail https://hackatonprojekt.net/healthz
 Do not use `docker compose config` or unrestricted `docker inspect` in shared output: resolved environment variables can contain credentials. Query only specific non-sensitive fields when diagnosing configuration. The server's historical `/srv/hackaton/repository` clone is not the deployment source; the versioned release directory is authoritative.
 
 
-## Sidebar and loading update â€” 21 November 2026
+## Sidebar and loading update — 21 November 2026
 
-The active release is `/srv/hackaton/releases/20261121-sidebar-loading`, image `market-radar:20261121-sidebar-loading`, Compose project `market-radar`. Its `deployment-record.json` records the source revision. The previous accepted release and image remain available for rollback. Data, runtime directories and secrets remain at the shared paths documented above.
+The sidebar/loading release is `/srv/hackaton/releases/20261121-sidebar-loading`, image `market-radar:20261121-sidebar-loading`, Compose project `market-radar`. Its `deployment-record.json` records the source revision. The previous accepted release and image remain available for rollback. Data, runtime directories and secrets remain at the shared paths documented above.
 
 Caddy now serves HTTP/1.1 and HTTP/2 over the existing HTTPS configuration. A reproducible client-network HTTP/3 fallback stalled a bootstrap request for approximately 22 seconds before sending it over HTTP/2, while server preparation took about 60 ms. HTTP/3 is disabled with the global `servers { protocols h1 h2 }` configuration and both domains send `Alt-Svc: clear` to expire cached advertisements. The checked configuration is tracked in `deployment/Caddyfile`; validate before installing it and reload the existing host service. Certificate validation, certificate renewal and redirects remain enabled. The prior Caddy configuration is preserved at `/srv/hackaton/ops/Caddyfile.before-http2-20261121`.
 
 Bootstrap and conversation-loading requests have a 10-second deadline covering both response headers and JSON content, with visible retry actions. A later bootstrap retry cancels the prior attempt; conversation-history failures do not block the manual dashboard. The AI response stream retains its separate analysis deadline.
+
+
+## Routing update — 21 November 2026
+
+The routing release uses `/srv/hackaton/releases/20261121-routing`, image `market-radar:20261121-routing`, with the same Compose project, shared dataset and conversation directory. The preceding accepted release `/srv/hackaton/releases/20261121-sidebar-loading` remains the rollback target. The exact deployed commit and acceptance results are recorded in the server release's `deployment-record.json`.
+
+Caddy continues proxying every application route to Next.js; no static fallback or rewrite to `/` is needed. Preserve the existing HTTP/1.1 and HTTP/2 configuration and `Alt-Svc: clear`. Verify all five direct page URLs, the root redirect, a real 404, copied analytical filters and AI continuity with `scripts/qa-routing.mjs`. There are no database migrations or data-release changes in this update.

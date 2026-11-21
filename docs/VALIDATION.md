@@ -10,7 +10,7 @@ The original reviewed archive contains 11 datasets and is retained unchanged for
 
 ## Deterministic and tool-loop tests
 
-The final active-source suite passed **63 tests** and TypeScript checking.
+The final active-source suite passed **69 tests** and TypeScript checking.
 
 `npm test` covers each active series through the analytics engine and every source through a mocked model's complete discovery, computation, citation and presentation cycle. The calculations use the actual serving data. Additional cases cover:
 
@@ -61,6 +61,7 @@ Run against a local app with installed Chrome:
 
 ```powershell
 $env:MARKET_RADAR_TEST_URL = "http://127.0.0.1:3000"
+node scripts/qa-routing.mjs
 node scripts/qa-explorer.mjs
 node scripts/qa-full-data-ui.mjs
 node scripts/qa-analyst-workspace.mjs
@@ -96,3 +97,12 @@ The workspace footer no longer uses an avatar. Its full label and bottom spacing
 A stalled bootstrap request was aborted after the 10-second deadline, showed a clear error and recovered through Try again. A separately stalled conversation request allowed the overview to appear in approximately 0.5 seconds, then offered Reload conversation; retry restored history successfully.
 
 The intermittent production delay was reproduced in default Chrome: approximately 22.5 seconds, mostly spent waiting before HTTP/2 fallback from HTTP/3. After configuring Caddy for HTTP/1.1 and HTTP/2 with Alt-Svc cleared, five default-Chrome loads completed without transport errors: 1.334 seconds for the first load, 0.356–0.450 seconds for reloads, with bootstrap taking 133–215 ms. These are measurements on the tested connection, not a universal latency guarantee.
+
+
+## Dedicated routes — 21 November 2026
+
+The routing update passed 69 deterministic tests, TypeScript checking and the optimized production build. Six new unit tests cover typed URL round trips (including all 595 indicators), real calendar dates, duplicate and unknown parameters, ranking scope and library filters.
+
+`scripts/qa-routing.mjs` passed ten browser scenarios: root redirect and page metadata; persistent layout and library navigation; reload; direct analytical links, dates and chart selection; fresh-browser sharing; manual-to-AI context and drafts; invalid-link recovery; HTTP 404; delayed history precedence; and an in-flight simulated AI response during navigation. Mobile source-directory layout was checked at 390 px. The suite detected and drove fixes for rapid filter changes and Back/Forward updates before React had committed the previous URL.
+
+The existing Explorer suite passed all 10 source transitions and 22 offered modes. The AI workspace suite passed 40 source/view combinations and 12 context transfers. AI transport in these browser suites is simulated; calculations use the real backend. Data, analytics rules and the server conversation schema are unchanged.

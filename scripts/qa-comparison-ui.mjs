@@ -20,7 +20,7 @@ try{
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),390);
  await page.screenshot({path:'test-results/typography-overview-mobile.png',fullPage:true,animations:'disabled'});
  await page.setViewportSize({width:1440,height:1050});
- await page.getByRole('button',{name:'Explore the market',exact:true}).click();
+ await page.getByRole('link',{name:'Explore the market',exact:true}).click();
  const source=page.getByLabel('Source',{exact:true}),choose=page.getByLabel('Choose indicator',{exact:true});
  const act=async fn=>{
   const response=page.waitForResponse(r=>r.url()===base+'/api/analytics'&&r.request().method()==='POST');

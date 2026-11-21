@@ -21,6 +21,12 @@ flowchart LR
 
 The LLM chooses investigations and explains returned evidence. The backend selects approved series, computes values and changes, and determines valid views. The frontend never accepts model-generated chart coordinates.
 
+## Pages and persistent workspace
+
+Five App Router pages share `src/app/(workspace)/layout.tsx`. Their common React context owns bootstrap data, active analytics, draft text and conversation streaming, so page transitions do not refetch the catalog or interrupt AI. Each page provides its own metadata; the root redirects to `/overview` and unknown paths return 404.
+
+`src/lib/workspace-routing.ts` validates and serializes public filter state. Explorer/Analyst URLs use the same `QuerySpec` as the engine plus an allowed view. Library URLs retain discovery filters. Explicit URLs take precedence over saved session scope. Navigation revisions and cancelled superseded queries prevent stale history or analytics from overwriting a newly selected route. Conversation content and identity never enter URLs. See [Routing](ROUTING.md) for the full route contract and reload semantics.
+
 ## Data release and provenance
 
 The immutable source archive is `0.6.0-local`, reviewed on 21 November 2026. The active source policy excludes the Thurgau vacancy dataset, leaving 3,445 observations, 595 series and 10 source datasets. National scope accounts for 2,015 observations and 168 series; 427 series are regional. Source datasets are distinct extracts, not necessarily distinct publishers.

@@ -11,11 +11,18 @@ The MVP uses a **frozen, reviewed data release**, not a live feed or a census of
 - **Market overview:** six separate views of skills, industry vacancies, occupational advertisements, registered vacancies and participant context.
 - **Data library:** all 595 approved indicator series, searchable by source and topic. The default is the 168 national series; regional slices are an explicit option.
 - **Market explorer:** source, indicator, geography, period and measure controls; history, snapshots and compatible rankings; charts and underlying values. The source selector lists all 10 datasets and changes topic when a source does not support the current topic. Choose an indicator directly, then add compatible comparisons.
+- **Sources & coverage:** a dedicated directory for all active datasets, source dates, research evidence and limitations.
 - **AI Analyst:** six typed tools, backend-generated chart data, source references and structured findings. Original questions and results remain retrievable across at least an initial question and 20 follow-ups.
 
 Named skill trends currently come **only from ITBoard**. Eurostat occupational groups are available under **Roles**. Other sources provide complementary market or participant context; switching source does not imply that the same skill or population exists there.
 
 Compare appears only when the current selection has compatible alternatives. Otherwise the Explorer explains the single-indicator view and keeps the main indicator selector available. Comparison menus show compatible options only and explicitly explain the four-series limit. The shared typography uses larger headings, readable body text and responsive filter, table and evidence labels.
+
+## Pages and shareable analysis
+
+The workspace has dedicated routes: `/overview`, `/library`, `/explore`, `/analyst` and `/sources`. `/` redirects to the overview. Explorer filters and chart selection are encoded in the URL; library links retain search and filters. Direct links, reload and browser Back/Forward restore the corresponding view.
+
+The shared layout preserves the conversation, unsent question and in-flight AI analysis while switching pages. Shared links contain public analytical filters only, never private chat history. See [Routing](docs/ROUTING.md) for parameters, privacy and recovery behavior.
 
 ## Data coverage
 
@@ -93,6 +100,7 @@ Browser regression checks use an isolated headless browser:
 
 ```powershell
 $env:MARKET_RADAR_TEST_URL = "http://127.0.0.1:3000"
+node scripts/qa-routing.mjs
 node scripts/qa-explorer.mjs
 node scripts/qa-full-data-ui.mjs
 node scripts/qa-analyst-workspace.mjs

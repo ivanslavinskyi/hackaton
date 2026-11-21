@@ -10,7 +10,7 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base);
  await page.getByRole('heading',{name:'The market, from more than one angle.'}).waitFor();
- await page.getByRole('button',{name:'AI Analyst',exact:true}).first().click();
+ await page.getByRole('link',{name:'AI Analyst',exact:true}).click();
  await page.getByLabel('Ask the AI Analyst').fill('Compare Python with Docker in the last two snapshots. Explain counts and shares.');
  await page.getByRole('button',{name:'Ask analyst',exact:true}).click();
  await page.locator('.message-assistant').waitFor({timeout:60000});
@@ -23,7 +23,7 @@ try{
  assert.equal(errors.length,0);
  console.log(JSON.stringify({productionBrowserAI:'passed',answer,jsErrors:errors}));
  await page.reload();
- await page.getByRole('button',{name:'AI Analyst',exact:true}).first().click();
+ await page.getByRole('link',{name:'AI Analyst',exact:true}).click();
  await page.locator('.message-assistant').waitFor();
  console.log('Production conversation restored after reload.');
 }finally{await browser.close();}

@@ -31,7 +31,7 @@ try {
   return result;
  };
  const selectedTopic=()=>page.getByRole('tab',{selected:true}).textContent();
- await page.getByRole('button',{name:'Explore the market',exact:true}).click();
+ await page.getByRole('link',{name:'Explore the market',exact:true}).click();
  await expect(source).toBeVisible();
  await action(()=>page.getByRole('tab',{name:'Skills',exact:true}).click());
  assert.equal(await source.locator('option').count(),sourceCount);
@@ -86,7 +86,7 @@ try {
  await page.unroute(base+'/api/analytics');
  await action(()=>source.selectOption('itboard_monitor_csv'));
 
- await page.getByRole('button',{name:'Data library',exact:true}).click();
+ await page.getByRole('link',{name:'Data library',exact:true}).click();
  const angular=data.catalog.find(c=>c.metric==='share_of_platform_ads'&&c.topic==='skills'&&c.geography==='CH');
  await page.getByLabel('Search all indicators').fill(angular.label);
  await action(()=>page.locator('.library-table tbody tr').first().getByRole('button').click());
@@ -94,7 +94,7 @@ try {
  await action(()=>page.locator('.measure-field').getByRole('button',{name:'Count',exact:true}).click());
  await expect(page.locator('.measure-field button.selected')).toHaveText('Count');
 
- await page.getByRole('button',{name:'Data library',exact:true}).click();
+ await page.getByRole('link',{name:'Data library',exact:true}).click();
  await page.getByLabel('Library coverage').selectOption('all');
  await page.getByLabel('Library topic').selectOption('regional');
  const regional=data.inventory.sources.find(s=>s.id.startsWith('fribourg'));
@@ -104,7 +104,7 @@ try {
  assert.equal(await page.getByLabel('Library topic').inputValue(),'all');
  assert.equal(await page.locator('.library-source-card.selected').count(),0);
 
- await page.getByRole('button',{name:'Explore the market',exact:true}).click();
+ await page.getByRole('link',{name:'Explore the market',exact:true}).click();
  await action(()=>page.getByRole('tab',{name:'Skills',exact:true}).click());
  await page.setViewportSize({width:390,height:844});
  await expect(page.locator('.measure-field button.selected')).toHaveText('Share');

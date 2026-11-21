@@ -35,8 +35,9 @@ function PointTooltip({ active, date, series }: {active?:boolean;date?:string;se
 }
 
 export function ResultView({ result, busy = false, onSources, compact = false, preferredView, onViewChange }: {result:AnalyticsResult;busy?:boolean;onSources:()=>void;compact?:boolean;preferredView?:ViewType;onViewChange?:(view:ViewType)=>void}) {
-  const [view,setView] = useState<ViewType>(preferredView || (result.query.mode === 'ranking' ? 'bar' : 'line'));
-  function chooseView(next:ViewType) {setView(next);onViewChange?.(next);}
+  const [localView,setView] = useState<ViewType>(preferredView || (result.query.mode === 'ranking' ? 'bar' : 'line'));
+  const view=onViewChange?(preferredView||(result.query.mode==='ranking'||result.query.mode==='snapshot'?'bar':'line')):localView;
+  function chooseView(next:ViewType) {if(!onViewChange)setView(next);onViewChange?.(next);}
   const [mounted,setMounted] = useState(false);
   const [showLimits,setShowLimits] = useState(false);
   useEffect(() => setMounted(true), []);

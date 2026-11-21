@@ -1,0 +1,107 @@
+// Real routes and analytics; AI transport is simulated, with no provider calls.
+import {chromium,expect} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {mkdirSync,writeFileSync} from 'node:fs';
+const base=(process.env.MARKET_RADAR_TEST_URL||'http://127.0.0.1:3002').replace(/\/$/,'');
+const browser=await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,headless:true}:{channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true});
+const checks=[],errors=[];mkdirSync('test-results',{recursive:true});
+const query={seriesIds:['itboard_monitor_python_open_ads','itboard_monitor_docker_open_ads'],geography:'CH',mode:'history',measure:'share',start:'2026-10-01',end:'2026-11-15'};
+const params=new URLSearchParams({geography:query.geography,mode:query.mode,measure:query.measure,start:query.start,end:query.end,view:'table'});query.seriesIds.forEach(id=>params.append('series',id));
+const direct='/explore?'+params;
+try{
+ const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();
+ let bootstraps=0;page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url()===base+'/api/bootstrap')bootstraps++;});
+ await page.goto(base);
+ await expect(page).toHaveURL(base+'/overview');
+ await expect(page.getByRole('heading',{name:'The market, from more than one angle.'})).toBeVisible();
+ await expect(page.getByRole('link',{name:'Market overview',exact:true})).toHaveAttribute('aria-current','page');
+ checks.push('root redirect, overview metadata and active navigation');
+ const initialBootstraps=bootstraps;
+ await page.getByRole('link',{name:'Data library',exact:true}).click();
+ await expect(page).toHaveURL(base+'/library');await expect(page).toHaveTitle('Data library | Market Radar');
+ await page.getByLabel('Library coverage').selectOption('all');
+ await page.getByLabel('Library topic').selectOption('participants');
+ await page.getByLabel('Search all indicators').fill('permit S');
+ await expect(page).toHaveURL(/q=permit\+S/);
+ const libraryUrl=page.url();
+ await page.getByRole('link',{name:'Sources and coverage',exact:true}).click();
+ await expect(page).toHaveURL(base+'/sources');await expect(page.locator('.source-directory-grid .source-card')).toHaveCount(10);
+ await page.goBack();await expect(page).toHaveURL(libraryUrl);await expect(page.getByLabel('Search all indicators')).toHaveValue('permit S');
+ await page.goForward();await expect(page).toHaveURL(base+'/sources');
+ await page.getByRole('link',{name:'Data library',exact:true}).click();await expect(page).toHaveURL(libraryUrl);
+ assert.equal(bootstraps,initialBootstraps,'Workspace navigation must not remount or reload the catalog');
+ checks.push('persistent layout, library URL filters, back/forward and source directory');
+ await page.reload();await expect(page.getByLabel('Search all indicators')).toHaveValue('permit S');
+ await expect(page.getByLabel('Library coverage')).toHaveValue('all');await expect(page.getByLabel('Library topic')).toHaveValue('participants');
+ checks.push('library refresh restores filters');
+ await page.goto(base+direct);
+ await expect(page.locator('.result-header h2')).toHaveText('Python & Docker');
+ await expect(page.getByRole('button',{name:'Data',exact:true})).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('.data-table tbody tr')).toHaveCount(4);
+ const rememberedURL=page.url();
+ await page.getByRole('button',{name:'Bars',exact:true}).click();await expect(page).toHaveURL(/view=bar/);
+ await page.goBack();await expect(page).toHaveURL(rememberedURL);await expect(page.getByRole('button',{name:'Data',exact:true})).toHaveAttribute('aria-pressed','true');
+ await page.getByRole('button',{name:'Count',exact:true}).click();await expect(page).toHaveURL(/measure=count/);
+ await page.goBack();await expect(page.getByRole('button',{name:'Share',exact:true})).toHaveAttribute('class',/selected/);
+ await expect(page.getByRole('button',{name:'Data',exact:true})).toHaveAttribute('aria-pressed','true');
+ await page.reload();await expect(page.locator('.data-table tbody tr')).toHaveCount(4);
+ checks.push('analytical deep link, date range, chart type, filter history and refresh');
+ // A URL from another browser reconstructs public analytics, without sharing chat identity.
+ const visitor=await browser.newContext(),other=await visitor.newPage();
+ await other.goto(base+direct);await expect(other.locator('.data-table tbody tr')).toHaveCount(4);await visitor.close();
+ checks.push('shared public analysis opens in a fresh anonymous browser');
+ await page.getByRole('button',{name:'Ask about this view',exact:true}).click();await expect(page).toHaveURL(/\/analyst\?/);
+ await page.getByLabel('Ask the AI Analyst').fill('Private draft stays in this browser');
+ await page.getByRole('link',{name:'Market overview',exact:true}).click();
+ await page.getByRole('link',{name:'AI Analyst',exact:true}).click();await expect(page.getByLabel('Ask the AI Analyst')).toHaveValue('Private draft stays in this browser');
+ assert.ok(!page.url().includes('Private'));await expect(page.locator('.analyst-canvas .data-table tbody tr')).toHaveCount(4);
+ checks.push('manual-to-AI context and draft survive route transitions without entering URL');
+ await page.goto(base+'/explore?series=not-a-real-series&geography=CH');
+ await expect(page.locator('.notice-error[role=alert]')).toContainText('This analysis link could not be opened.');
+ await page.getByRole('button',{name:'Use the current verified view'}).click();await expect(page.locator('.notice-error[role=alert]')).toHaveCount(0);
+ await page.goto(base+'/explore?series=x&view=pie');await expect(page.locator('.notice-error[role=alert]')).toContainText('This analysis link could not be opened.');
+ await page.goto(base+'/library?source=removed-source');await expect(page.locator('.notice-error[role=alert]')).toContainText('This library link could not be opened.');
+ await page.getByRole('link',{name:'Reset library filters'}).click();await expect(page).toHaveURL(base+'/library');
+ checks.push('invalid analytical/library links show recovery instead of silently changing filters');
+ const missing=await page.goto(base+'/this-page-does-not-exist');assert.equal(missing.status(),404);await expect(page.getByRole('heading',{name:'This page could not be found'})).toBeVisible();
+ await page.getByRole('link',{name:'Open market overview'}).click();await expect(page).toHaveURL(base+'/overview');
+ checks.push('real 404 response and recovery');
+ await page.setViewportSize({width:390,height:844});await page.getByRole('link',{name:'Sources and coverage',exact:true}).click();
+ await expect(page.locator('.source-directory-grid .source-card')).toHaveCount(10);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),390);
+ await page.screenshot({path:'test-results/routing-sources-mobile.png',fullPage:true,animations:'disabled'});
+ await context.close();
+
+ // Delayed history must not overwrite the explicit link's filters.
+ const delayed=await browser.newContext(),delayedPage=await delayed.newPage();
+ const data=await(await delayedPage.request.get(base+'/api/bootstrap')).json();
+ await delayedPage.route(base+'/api/conversation',async route=>{await new Promise(r=>setTimeout(r,1200));await route.fulfill({json:{turns:[],results:[data.initialResult],evidence:[],scope:data.initialResult.query}});});
+ const arrived=delayedPage.waitForResponse(r=>r.url()===base+'/api/conversation');
+ await delayedPage.goto(base+direct);await arrived;await expect(delayedPage.locator('.data-table tbody tr')).toHaveCount(4);assert.ok(delayedPage.url().includes('start=2026-10-01'));
+ await delayed.close();checks.push('explicit URL wins over delayed saved session scope');
+
+ // Keep an in-flight AI transport and its validated chart while pages change.
+ const ai=await browser.newContext(),chat=await ai.newPage();let release,requested,posted;
+ const waitForRequest=new Promise(r=>requested=r),gate=new Promise(r=>release=r);const turns=[];
+ const analytical=await(await chat.request.post(base+'/api/analytics',{data:query,headers:{origin:base}})).json();
+ await chat.route(base+'/api/bootstrap',async route=>{const response=await route.fetch();await route.fulfill({response,json:{...await response.json(),aiAvailable:true}});});
+ await chat.route(base+'/api/conversation',route=>route.fulfill({json:{turns,results:[analytical],evidence:[],scope:analytical.query}}));
+ await chat.route(base+'/api/analyst',async route=>{
+  posted=route.request().postDataJSON();requested();await gate;
+  const answer={summary:'Routing fixture: the original analytics stay connected.',findings:[{text:'The cited view uses verified source values.',resultIds:[analytical.id],evidenceIds:[]}],limitations:[],actions:[],views:[{resultId:analytical.id,type:'table',title:'Routing evidence table'}],clarification:null};
+  turns.push({id:1,role:'user',content:posted.message,createdAt:new Date().toISOString(),resultIds:[]},{id:2,role:'assistant',content:answer.summary,answer,createdAt:new Date().toISOString(),resultIds:[analytical.id]});
+  await route.fulfill({contentType:'application/x-ndjson',body:[{type:'result',result:analytical},{type:'answer',answer,turnId:2}].map(JSON.stringify).join('\n')+'\n'});
+ });
+ await chat.goto(base+direct.replace('/explore?','/analyst?'));await expect(chat.locator('.analyst-canvas .data-table tbody tr')).toHaveCount(4);
+ await chat.getByLabel('Ask the AI Analyst').fill('Routing test question');await chat.getByRole('button',{name:'Ask analyst',exact:true}).click();await waitForRequest;
+ await chat.getByRole('link',{name:'Data library',exact:true}).click();await expect(chat).toHaveURL(base+'/library');
+ release();await chat.getByRole('link',{name:'AI Analyst',exact:true}).click();
+ await expect(chat.locator('.answer-summary')).toContainText('Routing fixture:');await expect(chat.locator('.chat-error')).toHaveCount(0);
+ assert.deepEqual(posted.context,analytical.query);await expect(chat.getByRole('button',{name:'Routing evidence table'})).toHaveAttribute('aria-pressed','true');
+ assert.ok(!chat.url().includes('question'));await chat.reload();await expect(chat.locator('.answer-summary')).toContainText('Routing fixture:');
+ await chat.screenshot({path:'test-results/routing-analyst-desktop.png',fullPage:true,animations:'disabled'});
+ await ai.close();checks.push('in-flight AI survives navigation, retains context and reloads its stored answer');
+ assert.deepEqual(errors,[]);
+ writeFileSync('test-results/routing-report.json',JSON.stringify({base,status:'passed',checks,pageErrors:errors},null,2));
+ console.log(JSON.stringify({status:'passed',checks:checks.length,pageErrors:errors}));
+}finally{await browser.close();}
