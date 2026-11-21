@@ -7,7 +7,9 @@ body {font-size:16px;line-height:1.6;}
 .nav-label {font-size:.75rem;letter-spacing:.1em;}
 .nav-item {font-size:.9375rem;font-weight:550;}
 .sidebar-note strong,.workspace-person strong {font-size:.9375rem;}
-.sidebar-note p,.workspace-person div span {font-size:.8125rem;line-height:1.75;}
+.sidebar-note p {font-size:.8125rem;line-height:1.75;}
+.workspace-person strong {font-weight:600;line-height:1.4;}
+.workspace-person div span {font-size:.8125rem;line-height:1.45;margin-top:3px;}
 .button {font-size:.9375rem;min-height:44px;}
 .button-small {font-size:.875rem;min-height:38px;}
 .button-icon {min-height:38px;}

@@ -87,3 +87,12 @@ The final service was built natively on Linux ARM64 from the same application so
 Windows QA retained TLS verification and trusted the workstation's configured system CA. Browser tests used HTTP/2 after the local inspected connection produced QUIC transport errors; no server TLS weakening or certificate bypass was applied. A missing favicon found during inspection was fixed and the final browser console was clean.
 
 Private production test transcripts, session cookies and reports stay in ignored `.runtime/` and `test-results/`; neither credentials nor conversation data are published. Deployment operations, backup and rollback instructions are in [Deployment](DEPLOYMENT.md).
+
+
+## Sidebar and loading regression check — 21 November 2026
+
+The workspace footer no longer uses an avatar. Its full label and bottom spacing fit desktop viewports of 1440x900, 1280x720, 1024x600, 1200x450 and 1100x300; navigation scrolls when necessary and long labels wrap. The decorative evidence card is omitted on short desktop windows. Mobile navigation at 390 px retains its intended layout without horizontal overflow.
+
+A stalled bootstrap request was aborted after the 10-second deadline, showed a clear error and recovered through Try again. A separately stalled conversation request allowed the overview to appear in approximately 0.5 seconds, then offered Reload conversation; retry restored history successfully.
+
+The intermittent production delay was reproduced in default Chrome: approximately 22.5 seconds, mostly spent waiting before HTTP/2 fallback from HTTP/3. After configuring Caddy for HTTP/1.1 and HTTP/2 with Alt-Svc cleared, five default-Chrome loads completed without transport errors: 1.334 seconds for the first load, 0.356–0.450 seconds for reloads, with bootstrap taking 133–215 ms. These are measurements on the tested connection, not a universal latency guarantee.

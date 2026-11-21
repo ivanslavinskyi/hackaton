@@ -1,0 +1,21 @@
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
+hackatonprojekt.net {
+	encode zstd gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Alt-Svc clear
+		-Server
+	}
+	reverse_proxy 127.0.0.1:3000
+}
+
+www.hackatonprojekt.net {
+	header Alt-Svc clear
+	redir https://hackatonprojekt.net{uri} permanent
+}

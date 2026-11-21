@@ -25,6 +25,17 @@ async function responseJSON<T>(response:Response):Promise<T> {
   return body as T;
 }
 
+// Bound data/history reads, including the body; the streamed AI request has its own deadline.
+async function loadJSON<T>(url:string,init:RequestInit={}):Promise<T> {
+  const deadline=AbortSignal.timeout(10_000);
+  const signal=init.signal?AbortSignal.any([init.signal,deadline]):deadline;
+  try { return await responseJSON<T>(await fetch(url,{cache:'no-store',...init,signal})); }
+  catch(error) {
+    if(deadline.aborted)throw new Error('Loading took too long. Check your connection and try again.');
+    throw error;
+  }
+}
+
 export default function MarketRadar() {
   const [bootstrap,setBootstrap]=useState<Bootstrap|null>(null);
   const [loadError,setLoadError]=useState('');
@@ -46,6 +57,7 @@ export default function MarketRadar() {
   const [preferredView,setPreferredView]=useState<ViewType|undefined>();
   const [newChatBusy,setNewChatBusy]=useState(false);
   const [historyReady,setHistoryReady]=useState(false);
+  const loadAbort=useRef<AbortController|null>(null);
   const queryAbort=useRef<AbortController|null>(null);
   const chatAbort=useRef<AbortController|null>(null);
   const conversationEnd=useRef<HTMLDivElement|null>(null);
@@ -55,27 +67,31 @@ export default function MarketRadar() {
     resultsRef.current={...resultsRef.current,[value.id]:value};
     setResults(resultsRef.current);
   },[]);
-  const loadConversation=useCallback(async(restoreScope=false)=>{
-    const body=await responseJSON<{turns:ChatTurn[];results:AnalyticsResult[];evidence?:Evidence[];scope?:QueryInput|null}>(await fetch('/api/conversation',{cache:'no-store'}));
+  const loadConversation=useCallback(async(restoreScope=false,signal?:AbortSignal)=>{
+    const body=await loadJSON<{turns:ChatTurn[];results:AnalyticsResult[];evidence?:Evidence[];scope?:QueryInput|null}>('/api/conversation',{signal});
+    if(signal?.aborted)return;
     setTurns(body.turns||[]);
     for(const value of body.results||[])rememberResult(value);
     if(body.evidence)setEvidence(body.evidence);
     if(restoreScope&&body.scope){
       let saved=Object.values(resultsRef.current).find(value=>queryKey(value.query)===queryKey(body.scope!));
-      if(!saved)saved=await responseJSON<AnalyticsResult>(await fetch('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body.scope)}));
+      if(!saved)saved=await loadJSON<AnalyticsResult>('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body.scope),signal});
+      if(signal?.aborted)return;
       rememberResult(saved);setResult(saved);setQuery(saved.query);setPreferredView(undefined);
     }
     setHistoryReady(true);
   },[rememberResult]);
   const load=useCallback(async()=>{
+    loadAbort.current?.abort();const controller=new AbortController();loadAbort.current=controller;
     setLoadError('');
     try {
-      const data=await responseJSON<Bootstrap>(await fetch('/api/bootstrap',{cache:'no-store'}));
+      const data=await loadJSON<Bootstrap>('/api/bootstrap',{signal:controller.signal});
+      if(controller.signal.aborted)return;
       setBootstrap(data);setResult(data.initialResult);setQuery(data.initialResult.query);rememberResult(data.initialResult);
-      await loadConversation(true).catch(()=>{setHistoryReady(false);setChatError('Conversation history could not be loaded. Retry before continuing an existing conversation.');});
-    }catch(error){setLoadError(error instanceof Error?error.message:'The verified data could not be loaded.');}
+      await loadConversation(true,controller.signal).catch(()=>{if(controller.signal.aborted)return;setHistoryReady(false);setChatError('Conversation history could not be loaded. Retry before continuing an existing conversation.');});
+    }catch(error){if(!controller.signal.aborted)setLoadError(error instanceof Error?error.message:'The verified data could not be loaded.');}
   },[loadConversation,rememberResult]);
-  useEffect(()=>{void load();return()=>{queryAbort.current?.abort();chatAbort.current?.abort();};},[load]);
+  useEffect(()=>{void load();return()=>{loadAbort.current?.abort();queryAbort.current?.abort();chatAbort.current?.abort();};},[load]);
   useEffect(()=>{if(mode==='analyst')conversationEnd.current?.scrollIntoView({behavior:'smooth',block:'nearest'});},[turns,chatStatus,mode]);
 
   async function runQuery(input:QueryInput) {
@@ -137,7 +153,7 @@ export default function MarketRadar() {
     <header className="brand-header"><a className="brand-lockup" href="/" aria-label="Powercoders Market Radar home"><img src="/powercoders-logo.svg" alt="Powercoders" width="553" height="65"/><span className="brand-divider" aria-hidden="true"/><span className="product-name">Market Radar</span></a><span className="brand-purpose">Swiss IT market intelligence</span></header>
     <aside className="sidebar">
       <div className="sidebar-nav"><span className="nav-label">WORKSPACE</span><button className={`nav-item ${mode==='overview'?'active':''}`} aria-label="Market overview" onClick={()=>setMode('overview')}><Activity size={19}/><span>Market overview</span></button><button className={`nav-item ${mode==='library'?'active':''}`} aria-label="Data library" onClick={()=>setMode('library')}><Database size={19}/><span>Data library</span></button><button className={`nav-item ${mode==='explore'?'active':''}`} aria-label="Explore the market" onClick={()=>setMode('explore')}><Compass size={19}/><span>Explore the market</span></button><button className={`nav-item ${mode==='analyst'?'active':''}`} aria-label="AI Analyst" onClick={()=>setMode('analyst')}><Sparkles size={19}/><span>AI Analyst</span><span className="nav-mini-badge">AI</span></button><button className="nav-item" aria-label="Sources and coverage" onClick={()=>setSourcesOpen(true)} disabled={!bootstrap}><BookOpen size={19}/><span>Sources & coverage</span></button></div>
-      <div className="sidebar-bottom"><div className="sidebar-note"><span className="sidebar-note-icon"><FileCheck2 size={19}/></span><strong>Evidence comes first.</strong><p>Every chart starts with verified data. Every conclusion keeps its source.</p></div><div className="workspace-person"><span className="workspace-avatar">P</span><div><strong>Powercoders</strong><span>Programme workspace</span></div></div></div>
+      <div className="sidebar-bottom"><div className="sidebar-note"><span className="sidebar-note-icon"><FileCheck2 size={19}/></span><strong>Evidence comes first.</strong><p>Every chart starts with verified data. Every conclusion keeps its source.</p></div><div className="workspace-person"><div><strong>Powercoders</strong><span>Programme workspace</span></div></div></div>
     </aside>
     <main className="main-shell"><header className="topbar"><div className="breadcrumb">Workspace <span>/</span> <strong>{MODE_COPY[mode].label}</strong></div><div className="topbar-right"><span className="verified-label"><FileCheck2 size={15}/>Verified data</span><span className="country-label"><span className="swiss-flag">+</span>Switzerland</span></div></header>
       {!bootstrap||!result?<div className="initial-state">{loadError?<><CircleAlert size={32}/><h1>We couldn’t load the workspace</h1><p>{loadError}</p><Button onClick={()=>void load()}><RefreshCw size={16}/>Try again</Button></>:<><span className="loading-radar"><Radar size={42}/></span><h1>Opening your market workspace</h1><p>Loading verified indicators and their sources…</p><div className="skeleton-row"><span/><span/><span/></div></>}</div>:<>
