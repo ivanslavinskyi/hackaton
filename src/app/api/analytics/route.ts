@@ -11,7 +11,10 @@ export async function POST(req:NextRequest) {
     const lock=store.acquireLock(id);
     try {
       store.putResult(id,result);
-      if(result.status==='ok')store.setScope(id,result.query,'manual');
+      if(result.status==='ok'){
+        store.setScope(id,result.query,'manual');
+        if(req.headers.get('x-radar-context')==='chart')store.setBriefScope(id,null);
+      }
     } finally { store.releaseLock(id,lock); }
     return attachSession(NextResponse.json(result,{headers:{'Cache-Control':'no-store'}}),req,id);
   }

@@ -67,6 +67,8 @@ function useWorkspaceState() {
   const [evidence,setEvidence]=useState<Evidence[]>([]);
   const [message,setMessage]=useState('');
   const [briefScope,setActiveBriefScope]=useState<DecisionScope|null>(null);
+  const [contextBusy,setContextBusy]=useState(false),[contextError,setContextError]=useState('');
+  const contextUpdating=useRef(false);
   const briefVersion=useRef(0);
   function setBriefScope(value:DecisionScope|null){briefVersion.current++;setActiveBriefScope(value);}
   const [chatBusy,setChatBusy]=useState(false);
@@ -135,15 +137,17 @@ function useWorkspaceState() {
   useEffect(()=>{if(mode==='analyst')conversationEnd.current?.scrollIntoView({behavior:'smooth',block:'nearest'});},[turns,chatStatus,mode]);
 
   async function runQuery(input:QueryInput,options:{fromURL?:boolean;view?:ViewType}={}) {
+    if(chatBusy||contextUpdating.current){setQueryError('Wait for the current analysis or stop it in AI Analyst before changing the working view.');return;}
     const request=normalized(input),revision=++scopeVersion.current;
     const location=window.location.pathname+'?'+new URLSearchParams(window.location.search).toString();
     queryAbort.current?.abort();const controller=new AbortController();queryAbort.current=controller;pendingQuery.current={location,controller};
     setQueryBusy(true);setQueryError('');setRouteError('');
     try {
-      const value=await loadJSON<AnalyticsResult>('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request),signal:controller.signal});
+      const chartOnly=!options.fromURL||routeRef.current.mode==='explore';
+      const value=await loadJSON<AnalyticsResult>('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json',...(chartOnly?{'X-Radar-Context':'chart'}:{})},body:JSON.stringify(request),signal:controller.signal});
       if(controller.signal.aborted||revision!==scopeVersion.current||location!==window.location.pathname+'?'+new URLSearchParams(window.location.search).toString())return;
       if(options.view&&!value.allowedViews.includes(options.view))throw new Error('This chart type is not available for the linked analysis.');
-      if(!options.fromURL)setBriefScope(null);
+      if(chartOnly&&value.status==='ok')setBriefScope(null);
       setResult(value);setQuery(value.query);setPreferredView(options.view);rememberResult(value);
       if(!options.fromURL)syncResultURL(value,options.view);
       else if(queryIdentity(value.query)!==queryIdentity(request))syncResultURL(value,options.view,true);
@@ -208,7 +212,7 @@ function useWorkspaceState() {
     if(event.type==='error')setChatError(event.message);
   }
   async function sendMessage(text=message) {
-    const value=text.trim();if(!value||chatBusy)return;
+    const value=text.trim();if(!value||chatBusy||contextUpdating.current)return;
     setMode('analyst');
     if(!historyReady){setMessage(value);setChatError('Load the conversation history before continuing, or start a new conversation. This keeps your earlier context intact.');return;}
     if(!bootstrap?.aiAvailable){setMessage(value);setChatError('AI Analyst is not connected yet. You can continue exploring the verified data manually.');return;}
@@ -226,25 +230,36 @@ function useWorkspaceState() {
     }catch(error){setChatError(controller.signal.aborted?'Analysis stopped. Your previous results are still available.':error instanceof Error?error.message:'The analyst could not complete this request.');}
     finally{setChatBusy(false);setChatStatus('');chatAbort.current=null;}
   }
-  async function newConversation(){if(chatBusy)return;historyVersion.current++;setNewChatBusy(true);setChatError('');try{await responseJSON(await fetch('/api/conversation',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}));setTurns([]);setEvidence([]);setBriefScope(null);resultsRef.current=result?{[result.id]:result}:{};setResults(resultsRef.current);setMessage('');setHistoryReady(true);}catch(error){setChatError(error instanceof Error?error.message:'Unable to start a new conversation.');}finally{setNewChatBusy(false);}}
+  async function newConversation(){if(chatBusy||contextUpdating.current)return;historyVersion.current++;setNewChatBusy(true);setChatError('');try{await responseJSON(await fetch('/api/conversation',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}));setTurns([]);setEvidence([]);setBriefScope(null);resultsRef.current=result?{[result.id]:result}:{};setResults(resultsRef.current);setMessage('');setHistoryReady(true);}catch(error){setChatError(error instanceof Error?error.message:'Unable to start a new conversation.');}finally{setNewChatBusy(false);}}
   function askAboutView(){setMode('analyst');setMessage('Explain this view. What can we conclude, and what should we be careful about?');setTimeout(()=>composer.current?.focus(),50);}
 
-  function openCatalogItem(item:CatalogItem){setBriefScope(null);router.push(analysisHref('explore',{seriesIds:[item.id],topic:item.topic,sourceId:item.sourceId,geography:item.geography,measure:'reported',mode:'history'}));}
-  function openOverviewResult(value:AnalyticsResult){setBriefScope(null);rememberResult(value);router.push(analysisHref('explore',value.query));}
+  async function selectContext(scope:DecisionScope|null,input?:QueryInput,onSaved?:(value:AnalyticsResult|null)=>void){
+    if(contextUpdating.current)return;
+    if(chatBusy){setContextError('AI Analyst is answering. Wait or stop the analysis before changing its context.');return;}
+    contextUpdating.current=true;setContextBusy(true);setContextError('');briefVersion.current++;
+    try{
+      const saved=await loadJSON<{brief:DecisionScope|null;result:AnalyticsResult|null}>('/api/conversation',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({brief:scope,context:input})});
+      setBriefScope(saved.brief);
+      if(saved.result){scopeVersion.current++;queryAbort.current?.abort();pendingQuery.current=null;setQueryBusy(false);rememberResult(saved.result);setResult(saved.result);setQuery(saved.result.query);}
+      onSaved?.(saved.result);
+    }catch(error){setContextError(error instanceof Error?error.message:'The selected context could not be saved. Please try again.');}
+    finally{contextUpdating.current=false;setContextBusy(false);}
+  }
+  function clearBriefContext(){void selectContext(null);}
+  function openCatalogItem(item:CatalogItem){void selectContext(null,{seriesIds:[item.id],topic:item.topic,sourceId:item.sourceId,geography:item.geography,measure:'reported',mode:'history'},value=>{if(value)router.push(analysisHref('explore',value.query));});}
+  function openOverviewResult(value:AnalyticsResult){openDecisionResult(value);}
   function prepareQuestion(value:string){setMode('analyst');setMessage(value);setTimeout(()=>composer.current?.focus(),50);}
 
-  function openDecisionResult(value:AnalyticsResult,view?:ViewType){setBriefScope(null);rememberResult(value);router.push(analysisHref('explore',value.query,view));}
+  function openDecisionResult(value:AnalyticsResult,view?:ViewType){void selectContext(null,value.query,saved=>{if(saved){setPreferredView(view);router.push(analysisHref('explore',saved.query,view));}});}
   function askDecision(scope:DecisionScope|null,value:AnalyticsResult,text:string){
-    scopeVersion.current++;queryAbort.current?.abort();pendingQuery.current=null;
-    rememberResult(value);setResult(value);setQuery(value.query);setPreferredView(value.query.mode==='snapshot'?'metric_cards':undefined);
-    setBriefScope(scope);setMessage(text);router.push(analysisHref('analyst',value.query,value.query.mode==='snapshot'?'metric_cards':undefined));
+    void selectContext(scope,value.query,saved=>{if(saved){const view=saved.query.mode==='snapshot'?'metric_cards':undefined;setPreferredView(view);setMessage(text);router.push(analysisHref('analyst',saved.query,view));}});
   }
 
   const userTurns=turns.filter(t=>t.role==='user').length;
   const activeView:ViewType=effectiveView||(result?.query.mode==='ranking'||result?.query.mode==='snapshot'?'bar':'line');
   const topic=(bootstrap?.catalog.find(c=>c.id===query.seriesIds[0]||(!query.seriesIds.length&&c.sourceId===query.sourceId&&(!query.metric||c.metric===query.metric)))?.topic||query.topic||'skills') as Topic;
 
-  return {briefScope,setBriefScope,openDecisionResult,askDecision,bootstrap,loadError,mode,result,query,queryBusy,queryError,routeError,sourcesOpen,sourcesResult,turns,results,evidence,message,chatBusy,chatStatus,chatError,preferredView:effectiveView,newChatBusy,historyReady,conversationEnd,composer,userTurns,activeView,topic,setMessage,setChatError,setSourcesOpen,setSourcesResult,setMode,hrefFor,load,loadConversation,runQuery,openResult,sendMessage,newConversation,askAboutView,openCatalogItem,openOverviewResult,prepareQuestion,changeView,chatAbort,syncResultURL};
+  return {briefScope,clearBriefContext,contextBusy,contextError,openDecisionResult,askDecision,bootstrap,loadError,mode,result,query,queryBusy,queryError,routeError,sourcesOpen,sourcesResult,turns,results,evidence,message,chatBusy,chatStatus,chatError,preferredView:effectiveView,newChatBusy,historyReady,conversationEnd,composer,userTurns,activeView,topic,setMessage,setChatError,setSourcesOpen,setSourcesResult,setMode,hrefFor,load,loadConversation,runQuery,openResult,sendMessage,newConversation,askAboutView,openCatalogItem,openOverviewResult,prepareQuestion,changeView,chatAbort,syncResultURL};
 }
 
 const WorkspaceContext=createContext<ReturnType<typeof useWorkspaceState>|null>(null);
@@ -253,17 +268,19 @@ function useWorkspace(){const value=useContext(WorkspaceContext);if(!value)throw
 export default function MarketRadar({children}:{children:React.ReactNode}){const workspace=useWorkspaceState();return <WorkspaceContext.Provider value={workspace}><WorkspaceShell>{children}</WorkspaceShell></WorkspaceContext.Provider>;}
 
 function WorkspaceShell({children}:{children:React.ReactNode}){
-  const {bootstrap,loadError,mode,result,routeError,sourcesOpen,sourcesResult,preferredView,setSourcesOpen,setSourcesResult,setMode,hrefFor,load,syncResultURL}=useWorkspace();
+  const {contextBusy,contextError,bootstrap,loadError,mode,result,routeError,sourcesOpen,sourcesResult,preferredView,setSourcesOpen,setSourcesResult,setMode,hrefFor,load,syncResultURL}=useWorkspace();
   return <div className="app-shell">
     <header className="brand-header"><Link className="brand-lockup" href="/overview" aria-label="Powercoders Market Radar home"><img src="/powercoders-logo.svg" alt="Powercoders" width="553" height="65"/><span className="brand-divider" aria-hidden="true"/><span className="product-name">Market Radar</span></Link><span className="brand-purpose">Swiss IT market intelligence</span></header>
     <aside className="sidebar">
       <div className="sidebar-nav"><span className="nav-label">WORKSPACE</span><Link className={`nav-item ${mode==='overview'?'active':''}`} aria-label="Market overview" aria-current={mode==='overview'?'page':undefined} href={hrefFor('overview')}><Activity size={19}/><span>Market overview</span></Link><Link className={`nav-item ${mode==='opportunities'?'active':''}`} aria-label="Graduate opportunities" aria-current={mode==='opportunities'?'page':undefined} href="/opportunities"><GraduationCap size={19}/><span>Graduate opportunities</span></Link><Link className={`nav-item ${mode==='participants'?'active':''}`} aria-label="Participant context" aria-current={mode==='participants'?'page':undefined} href="/participants"><Building2 size={19}/><span>Participant context</span></Link><Link className={`nav-item ${mode==='library'?'active':''}`} aria-label="Data library" aria-current={mode==='library'?'page':undefined} href={hrefFor('library')}><Database size={19}/><span>Data library</span></Link><Link className={`nav-item ${mode==='explore'?'active':''}`} aria-label="Explore the market" aria-current={mode==='explore'?'page':undefined} href={hrefFor('explore')}><Compass size={19}/><span>Explore the market</span></Link><Link className={`nav-item ${mode==='analyst'?'active':''}`} aria-label="AI Analyst" aria-current={mode==='analyst'?'page':undefined} href={hrefFor('analyst')}><Sparkles size={19}/><span>AI Analyst</span><span className="nav-mini-badge">AI</span></Link><Link className={`nav-item ${mode==='sources'?'active':''}`} aria-label="Sources and coverage" aria-current={mode==='sources'?'page':undefined} href="/sources"><BookOpen size={19}/><span>Sources & coverage</span></Link></div>
-      <div className="sidebar-bottom"><div className="sidebar-note"><span className="sidebar-note-icon"><FileCheck2 size={19}/></span><strong>Evidence comes first.</strong><p>Every chart starts with verified data. Every conclusion keeps its source.</p></div><div className="workspace-person"><div><strong>Powercoders</strong><span>Programme workspace</span></div></div></div>
+      <div className="sidebar-bottom"><div className="sidebar-note"><span className="sidebar-note-icon"><FileCheck2 size={19}/></span><strong>Evidence comes first.</strong><p>Every chart starts with verified data. Every conclusion keeps its source.</p></div><div className="workspace-person"><div><strong>Powercoders</strong><span>Workspace</span></div></div></div>
     </aside>
     <main className="main-shell"><header className="topbar"><div className="breadcrumb">Workspace <span>/</span> <strong>{MODE_COPY[mode].label}</strong></div><div className="topbar-right"><span className="verified-label"><FileCheck2 size={15}/>Verified data</span></div></header>
       {!bootstrap||!result?<div className="initial-state">{loadError?<><CircleAlert size={32}/><h1>We couldn’t load the workspace</h1><p>{loadError}</p><Button onClick={()=>void load()}><RefreshCw size={16}/>Try again</Button></>:<><span className="loading-radar"><Radar size={42}/></span><h1>Opening your market workspace</h1><p>Loading verified indicators and their sources…</p><div className="skeleton-row"><span/><span/><span/></div></>}</div>:<>
       <section className="page-heading"><div><div className="eyebrow">YOUR SWISS IT MARKET WORKSPACE</div><h1>{MODE_COPY[mode].title}</h1><p>{MODE_COPY[mode].description}</p></div><div className="heading-switch segmented"><button className={mode==='explore'?'selected':''} onClick={()=>setMode('explore')} aria-pressed={mode==='explore'}><SlidersHorizontal size={16}/>Explore</button><button className={mode==='analyst'?'selected':''} onClick={()=>setMode('analyst')} aria-pressed={mode==='analyst'}><Sparkles size={16}/>AI Analyst</button></div></section>
       {routeError&&<div className="notice notice-error" role="alert"><CircleAlert size={18}/><div><strong>This analysis link could not be opened.</strong><p>{routeError} The previous verified view remains available.</p><button className="text-button" onClick={()=>syncResultURL(result,preferredView,true)}>Use the current verified view</button></div></div>}
+      {contextBusy&&<div className="notice" role="status"><LoaderCircle className="spin" size={16}/>Saving the selected context…</div>}
+      {contextError&&<div className="notice notice-error" role="alert"><CircleAlert size={16}/>{contextError}</div>}
       {children}
       <footer className="workspace-footer"><span>Market Radar <span>·</span> Built for informed programme decisions</span><Link className="text-button" href="/sources">Data coverage & methodology <CircleHelp size={13}/></Link></footer>
       <SourcesDrawer open={sourcesOpen} onClose={()=>{setSourcesOpen(false);setSourcesResult(null);}} result={sourcesResult||result} catalog={bootstrap.catalog} release={bootstrap.release} onLibrary={()=>{setSourcesOpen(false);setMode('library');}}/>
@@ -295,11 +312,11 @@ export function ExploreScreen(){
 }
 
 export function AnalystScreen(){
-  const {briefScope,setBriefScope,bootstrap,result,query,turns,results,evidence,message,chatBusy,chatStatus,chatError,preferredView,newChatBusy,conversationEnd,composer,userTurns,activeView,setMessage,setChatError,setSourcesOpen,setMode,loadConversation,openResult,sendMessage,newConversation,changeView,chatAbort}=useWorkspace();
+  const {briefScope,clearBriefContext,contextBusy,bootstrap,result,query,turns,results,evidence,message,chatBusy,chatStatus,chatError,preferredView,newChatBusy,conversationEnd,composer,userTurns,activeView,setMessage,setChatError,setSourcesOpen,setMode,loadConversation,openResult,sendMessage,newConversation,changeView,chatAbort}=useWorkspace();
   if(!bootstrap||!result)return null;
   return <><div className="workspace-data-access"><Database size={16}/><span>ITBoard · Eurostat · BFS · SECO · SEM · regional sources</span><Link className="text-button" href="/library">Browse all {bootstrap.inventory.counts.series} indicators</Link></div>
         {!bootstrap.aiAvailable&&<div className="notice notice-setup"><Info size={18}/><div><strong>Your analyst is ready for an API connection.</strong><p>AI conversations will be available once the server connection is configured. All manual data exploration remains available.</p></div><Button variant="outline" size="sm" onClick={()=>setMode('explore')}>Keep exploring</Button></div>}
-        {briefScope&&<div className="decision-context"><BookOpen size={16}/><span>Decision context: {briefScope.kind==='opportunities'?'Graduate opportunities':`Participant context · ${briefScope.group==='all'?'All groups, separately':PARTICIPANT_GROUPS[briefScope.group as keyof typeof PARTICIPANT_GROUPS]?.label}`} · {geographyLabel(briefScope.geography||'CH')}{briefScope.role?` · ${bootstrap.catalog.find(item=>item.id===briefScope.role)?.label||'Selected role'}`:''}</span><button className="text-button" onClick={()=>setBriefScope(null)}>Use chart only</button></div>}
+        {briefScope&&<div className="decision-context"><BookOpen size={16}/><span>Decision context: {briefScope.kind==='opportunities'?'Graduate opportunities':`Participant context · ${briefScope.group==='all'?'All groups, separately':PARTICIPANT_GROUPS[briefScope.group as keyof typeof PARTICIPANT_GROUPS]?.label}`} · {geographyLabel(briefScope.geography||'CH')}{briefScope.role?` · ${bootstrap.catalog.find(item=>item.id===briefScope.role)?.label||'Selected role'}`:''}</span><button className="text-button" disabled={contextBusy||chatBusy} onClick={clearBriefContext}>Use chart only</button></div>}
         <div className="analyst-layout"><section className="conversation-card"><div className="conversation-header"><div><span className="analyst-avatar"><Sparkles size={18}/></span><div><h2>AI Analyst</h2><span>Evidence-led, question by question</span></div></div><Button size="icon" variant="ghost" disabled={chatBusy||newChatBusy} onClick={()=>void newConversation()} title="Start a new conversation" aria-label="Start a new conversation">{newChatBusy?<LoaderCircle size={17} className="spin"/>:<Plus size={18}/>}</Button></div>
           <div className="context-strip"><History size={14}/><span>{userTurns?`${userTurns} ${userTurns===1?'question':'questions'} in this conversation`:'Context for 20+ follow-up questions'}</span><span className="context-scope">{geographyLabel(result.query.geography)}</span></div>
           <div className="conversation-body" aria-live="polite" aria-relevant="additions text">
@@ -308,7 +325,7 @@ export function AnalystScreen(){
             {chatError&&<div className="chat-error" role="alert"><CircleAlert size={16}/><div>{chatError}<button className="text-button" onClick={()=>void loadConversation(true).then(()=>setChatError('')).catch(()=>setChatError('Conversation history is still unavailable. Please try again.'))}>Reload conversation</button></div></div>}
             <div ref={conversationEnd}/>
           </div>
-          <form className="composer" onSubmit={(event:FormEvent)=>{event.preventDefault();void sendMessage();}}><label className="sr-only" htmlFor="analyst-question">Ask the AI Analyst</label><textarea ref={composer} id="analyst-question" placeholder={turns.length?'Ask a follow-up…':'Ask anything about the available market data…'} value={message} onChange={e=>setMessage(e.target.value)} maxLength={4000} rows={2} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void sendMessage();}}}/><div className="composer-bottom"><span><Layers3 size={13}/>Current view included</span>{chatBusy?<Button type="button" size="sm" variant="outline" onClick={()=>chatAbort.current?.abort()}><Square size={12}/>Stop</Button>:<Button type="submit" size="sm" disabled={!message.trim()||!bootstrap.aiAvailable}><Send size={15}/>Ask analyst</Button>}</div></form>
+          <form className="composer" onSubmit={(event:FormEvent)=>{event.preventDefault();void sendMessage();}}><label className="sr-only" htmlFor="analyst-question">Ask the AI Analyst</label><textarea ref={composer} id="analyst-question" placeholder={turns.length?'Ask a follow-up…':'Ask anything about the available market data…'} value={message} onChange={e=>setMessage(e.target.value)} maxLength={4000} rows={2} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void sendMessage();}}}/><div className="composer-bottom"><span><Layers3 size={13}/>Current view included</span>{chatBusy?<Button type="button" size="sm" variant="outline" onClick={()=>chatAbort.current?.abort()}><Square size={12}/>Stop</Button>:<Button type="submit" size="sm" disabled={contextBusy||!message.trim()||!bootstrap.aiAvailable}><Send size={15}/>Ask analyst</Button>}</div></form>
         </section><div className="analyst-canvas"><div className="canvas-heading"><div><span className="eyebrow">CONNECTED WORKSPACE</span><h3>Your working view</h3></div><Button variant="outline" size="sm" onClick={()=>setMode('explore')}><SlidersHorizontal size={14}/>Explore this view</Button></div><div className="scope-chips"><span><span className="swiss-mini">+</span>{geographyLabel(result.query.geography)}</span><span>{result.query.measure==='share'?'Share / rate':result.query.measure==='count'?'Count':'Reported values'}</span>{result.series.slice(0,3).map(s=><span key={s.id}>{s.label}</span>)}</div><ResultView result={result} onSources={()=>setSourcesOpen(true)} compact preferredView={preferredView} onViewChange={changeView}/><div className="connected-note"><FileCheck2 size={16}/><p>Charts and answers use the same verified results. Open any referenced view in the conversation to revisit it.</p></div>{turns.length>0&&!chatBusy&&<div className="followup-suggestions"><span>Keep exploring</span>{(briefScope?.kind==='participants'||result.series.some(series=>series.id.startsWith('sem_'))?['What about Bern canton?','What does the denominator include?','Can we see a trend?']:briefScope?.kind==='opportunities'?['What do we know about junior roles?','Which skills can we verify?','What should we check with employers?']:query.topic==='skills'||result.series.some(series=>series.id.includes('python'))?['Compare with Docker.','What are the limitations?','And for junior roles?']:['What are the limitations?','What changed over time?','Which other sources add context?']).map(text=><button key={text} onClick={()=>void sendMessage(text)} disabled={!bootstrap.aiAvailable}>{text}</button>)}</div>}</div></div>
 </>;
 }

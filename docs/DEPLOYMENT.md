@@ -150,3 +150,10 @@ Caddy continues proxying every application route to Next.js; no static fallback 
 The decision-workspaces release uses `/srv/hackaton/releases/20261121-decisions`, image `market-radar:20261121-decisions`. The previous accepted routing release remains the rollback target. Dataset and shared runtime mounts are unchanged. A pre-cutover online backup is required: this increment creates an additive `conversation_briefs` table for per-session decision context. It preserves all existing tables/rows and is compatible with rolling back to the preceding application.
 
 Verify `/opportunities`, `/participants`, the ordinary Explorer and AI, including a participant group/canton follow-up. Run `scripts/qa-decision-workspaces.mjs` for deterministic browser checks and `scripts/live-decision-check.mjs` for a separate paid-provider check. The server deployment record contains exact revisions, backup path and acceptance results. Caddy configuration remains unchanged.
+
+
+## Context consistency update — 21 November 2026
+
+The context-persistence release uses `/srv/hackaton/releases/20261121-context`, image `market-radar:20261121-context`, with `/srv/hackaton/releases/20261121-decisions` retained for rollback. It adds an explicit session-context PATCH endpoint; the SQLite schema, source policy and dataset stay unchanged. Take an online backup before cutover and retain the shared production history. Candidate checks use a separate conversation directory.
+
+Acceptance includes `qa-context-persistence.mjs` and the paid `live-decision-consistency.mjs` in addition to decision-workspace and local/production parity checks. Record the deployed application commit, actual test outcomes and backup in `deployment-record.json`. The server keeps the existing Caddy HTTP/1.1 and HTTP/2 configuration.

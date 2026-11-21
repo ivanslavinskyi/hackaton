@@ -24,7 +24,7 @@ Compare appears only when the current selection has compatible alternatives. Oth
 
 The workspace has dedicated routes: `/overview`, `/opportunities`, `/participants`, `/library`, `/explore`, `/analyst` and `/sources`. `/` redirects to the overview. Explorer filters and chart selection are encoded in the URL; library links retain search and filters. Direct links, reload and browser Back/Forward restore the corresponding view.
 
-The shared layout preserves the conversation, unsent question and in-flight AI analysis while switching pages. Shared links contain public analytical filters only, never private chat history. See [Routing](docs/ROUTING.md) for parameters, privacy and recovery behavior.
+The shared layout preserves the conversation, unsent question and in-flight AI analysis while switching pages. A selected decision brief is saved before opening AI, even before the first question. “Use chart only” and explicit manual evidence changes clear that decision context persistently. Shared links contain public analytical filters only, never private chat history. See [Routing](docs/ROUTING.md) for parameters, privacy and recovery behavior.
 
 ## Data coverage
 
@@ -96,13 +96,14 @@ npm test
 npm run build
 ```
 
-With the app running, `npm run test:api` checks health, bootstrap data, deterministic comparisons, invalid parameters and session protections. Set `MARKET_RADAR_TEST_URL` to test another local address. Unit tests use mocked AI responses; they do not require a key. `scripts/live-ai-check.mjs` makes real, potentially billable AI requests and stores its own test conversation under `.runtime/`.
+With the app running, `npm run test:api` checks health, bootstrap data, deterministic comparisons, invalid parameters and session protections. Set `MARKET_RADAR_TEST_URL` to test another local address. `scripts/live-decision-consistency.mjs` separately checks live role/group/canton follow-ups, every cited numerical result against the engine, displayed chart tables and source links. It makes billable provider requests. Unit tests use mocked AI responses; they do not require a key. `scripts/live-ai-check.mjs` makes real, potentially billable AI requests and stores its own test conversation under `.runtime/`.
 
 Browser regression checks use an isolated headless browser:
 
 ```powershell
 $env:MARKET_RADAR_TEST_URL = "http://127.0.0.1:3000"
 node scripts/qa-decision-workspaces.mjs
+node scripts/qa-context-persistence.mjs
 node scripts/qa-routing.mjs
 node scripts/qa-explorer.mjs
 node scripts/qa-full-data-ui.mjs

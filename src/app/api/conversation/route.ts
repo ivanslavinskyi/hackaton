@@ -2,7 +2,8 @@ import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getConversationStore } from '@/lib/conversations';
 import { searchEvidence } from '@/lib/analytics';
-import { attachSession, checkOrigin, errorResponse, HttpError, rateLimit, sessionFor } from '@/lib/http';
+import {updateConversationContext} from '@/lib/conversation-context';
+import { attachSession, checkOrigin, errorResponse, HttpError, rateLimit, readBody, sessionFor } from '@/lib/http';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export async function GET(req:NextRequest) {
@@ -23,4 +24,11 @@ export async function POST(req:NextRequest) {
     checkOrigin(req);rateLimit(req,'session');const id=randomBytes(32).toString('hex');getConversationStore().ensureSession(id);
     return attachSession(NextResponse.json({turns:[],results:[],scope:null,brief:null,evidence:[]}),req,id);
   } catch(error) {return errorResponse(error);}
+}
+export async function PATCH(req:NextRequest){
+  try{
+    checkOrigin(req);rateLimit(req);const id=sessionFor(req);
+    const saved=updateConversationContext(getConversationStore(),id,await readBody(req));
+    return attachSession(NextResponse.json(saved),req,id);
+  }catch(error){return errorResponse(error);}
 }

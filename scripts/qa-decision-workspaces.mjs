@@ -33,7 +33,14 @@ try{
  // Real backend brief, simulated model transport; no paid requests in this suite.
  const context=await browser.newContext({viewport:{width:1440,height:1050}}),chat=await context.newPage();chat.on('pageerror',error=>errors.push(error.message));let posted=null,scope=null,turns=[],saved=[];
  await chat.route(base+'/api/bootstrap',async route=>{const r=await route.fetch();await route.fulfill({response:r,json:{...await r.json(),aiAvailable:true}});});
- await chat.route(base+'/api/conversation',route=>route.fulfill({json:{turns,results:saved,scope:saved.find(result=>result.series[0].unit==='percent')?.query||null,brief:scope,evidence:[]}}));
+ await chat.route(base+'/api/conversation',async route=>{
+  if(route.request().method()==='PATCH'){
+   const body=route.request().postDataJSON();scope=body.brief;
+   const result=body.context?(await(await chat.request.post(base+'/api/analytics',{data:body.context,headers:{origin:base}})).json()):null;
+   return route.fulfill({json:{brief:scope,result}});
+  }
+  return route.fulfill({json:{turns,results:saved,scope:saved.find(result=>result.series[0].unit==='percent')?.query||null,brief:scope,evidence:[]}});
+ });
  await chat.route(base+'/api/analyst',async route=>{
   posted=route.request().postDataJSON();scope=posted.brief;saved=brief.panels.map(panel=>panel.result);const rate=saved.find(result=>result.series[0].unit==='percent');
   const answer={summary:'Decision brief fixture: the selected population and geography are preserved.',findings:[{text:'These are separate administrative population measures.',resultIds:[rate.id],evidenceIds:[]}],limitations:brief.limitations,actions:[],views:[{resultId:rate.id,type:'metric_cards',title:'Published participant context'}],clarification:null};
