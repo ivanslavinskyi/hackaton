@@ -1,0 +1,46 @@
+Market Radar — local MVP
+
+Requirements: Node.js 24.9+ and npm. SQLite is built into Node; no database service is needed.
+
+1. npm ci
+2. npm run data:prepare -- "<path-to-verified-0.6.0-local-release>"
+   The release package is supplied separately; a clean clone does not include data/.
+   This command verifies and copies a saved release. It does not download sources.
+   Then run npm run data:verify.
+3. Copy .env.example to .env.local and set OPENAI_API_KEY locally.
+   OPENAI_MODEL is configurable. Never commit .env.local.
+4. npm run dev
+5. Open http://127.0.0.1:3000
+
+Checks: npm run typecheck; npm test; npm run build.
+Verify the approved dataset and source counts: npm run data:verify.
+With the server running: npm run test:api.
+Production-local run: npm run build, then npm start.
+
+The manual Explorer works without an API key. AI Analyst uses the live OpenAI Responses API.
+Analytics: data/market-radar.sqlite, read-only, public verified release only.
+Conversations: .runtime/conversations.sqlite, separate and ignored by Git.
+At least the initial question plus 20 follow-ups are retained. Sessions expire after 48 hours;
+conversation limits preserve existing history and return an explicit error rather than silently dropping it.
+
+Server deployment, scheduled collection and email sending are not implemented by this local setup.
+
+The landing screen is a multi-source Market overview. Data library exposes all 595
+approved series; 168 are national, regional data is an explicit opt-in. Explorer and
+AI Analyst use the same validated queries and source inventory. The release contains
+3,445 numeric records, not 3,445 unique jobs: related counts, derived shares and
+regional observations are separate records. Frozen source dates differ by publisher.
+When supplied, data/verification-audit.json records reconciliation against the saved
+raw source files. This optional audit artifact and the original acquisition files
+are not included in Git.
+
+The Explorer source selector lists all 10 datasets. Choosing a source can switch
+to its supported topic and geography. Skills and Experience currently use ITBoard;
+Roles also includes Eurostat occupational groups. Incompatible indicators cannot
+be combined into a ranking or a shared numeric comparison.
+
+See README.md and docs/ARCHITECTURE.md for data package requirements, contracts,
+runtime limits and the distinction between source verification and live freshness.
+
+Thurgau vacancy data is excluded from the active workspace by source policy.
+The original verified archive is retained unchanged for provenance.

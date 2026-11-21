@@ -1,0 +1,38 @@
+Market Radar — three-minute demo
+
+0:00–0:40 | See the sources, then explore
+Start with Market overview: BFS industry vacancies, Eurostat occupational ads,
+SECO registrations and SEM participant context. Each has its own period and unit.
+Open Data library to show national and regional coverage, then explore Python and Docker.
+In the Explorer, show all source datasets in the Source selector. Eurostat occupational
+groups open under Roles; Skills correctly has ITBoard evidence only. Each source
+keeps its own definition rather than pretending to measure the same population.
+Switch to Count, then Data. Show original dates, counts, denominators and sources.
+Explain: these are active-ad snapshots from one platform, not the whole Swiss market.
+
+0:40–1:30 | Ask a question
+AI Analyst: "How has Python changed in the available data?"
+Follow up: "Compare with Docker."
+Watch capability discovery and deterministic calculations update the working view.
+In the last two snapshots, Python rises from 115/582 to 188/770.
+Docker rises from 99 to 123 ads, but its share falls from 17.01% to 15.97%.
+The denominator makes the interpretation more useful than a simple count chart.
+
+1:30–2:05 | Test the limits
+Ask: "And for junior developers?"
+The analyst must explain that junior-by-skill data is unavailable and label any
+broader junior indicator as a separate alternative. Missing is not zero.
+
+2:05–2:40 | Support a decision
+Ask: "Should Powercoders expand its AI training programme?"
+The analyst can inspect the ML / AI tag and approved research notes, but must
+also identify missing partner requirements, programme outcomes, costs and capacity.
+Expect a cautious pilot or further evidence gathering, not a fabricated yes/no.
+
+2:40–3:00 | Verify and continue
+Open a cited result and its publisher link. Return to Explore this view.
+Show that manual filters and AI use the same result, and that conversation
+history and original results survive reload. Twenty follow-ups are supported.
+
+The dataset is a frozen verified release, not a live feed. AI needs the server
+API key; the manual Explorer remains available when AI is unavailable.

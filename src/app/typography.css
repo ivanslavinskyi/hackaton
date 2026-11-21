@@ -1,0 +1,118 @@
+/* A readable type scale shared by the manual and AI workspaces. */
+body {font-size:16px;line-height:1.6;}
+.page-heading h1 {font-size:clamp(2rem,3.2vw,2.75rem);font-weight:720;line-height:1.12;letter-spacing:-.045em;color:#20222d;}
+.page-heading p {font-size:1rem;line-height:1.65;max-width:760px;}
+.page-heading .eyebrow,.eyebrow,.result-header .eyebrow,.side-card .eyebrow,.canvas-heading .eyebrow {font-size:.75rem;font-weight:650;letter-spacing:.1em;}
+.breadcrumb,.topbar-right,.brand-purpose {font-size:.875rem;}
+.nav-label {font-size:.75rem;letter-spacing:.1em;}
+.nav-item {font-size:.9375rem;font-weight:550;}
+.sidebar-note strong,.workspace-person strong {font-size:.9375rem;}
+.sidebar-note p,.workspace-person div span {font-size:.8125rem;line-height:1.75;}
+.button {font-size:.9375rem;min-height:44px;}
+.button-small {font-size:.875rem;min-height:38px;}
+.button-icon {min-height:38px;}
+.text-button,.segmented button,.segmented.compact button {font-size:.875rem;}
+.topic-tabs>button {font-size:1rem;font-weight:600;padding:18px 0;}
+.filter-row {flex-wrap:wrap;}
+.filter-field {min-width:165px;}
+.source-field {min-width:230px;}
+.filter-field>span:first-child,.measure-field>span,.library-filter>span {font-size:.875rem;font-weight:550;color:#555a69;}
+.select-wrap select,.library-filter select {font-size:.9375rem;height:44px;}
+.indicator-control-row>p,.explorer-coverage,.explorer-coverage p {font-size:.875rem;line-height:1.7;}
+.explorer-coverage span,.explorer-coverage>.text-button {font-size:.8125rem;}
+.indicator-tag,.add-indicator,.ranking-sort select {font-size:.875rem;}
+.indicator-tag {max-width:360px;padding:7px 10px;}
+.period-controls {flex-wrap:wrap;font-size:.8125rem;}
+.period-controls input {font-size:.8125rem;height:38px;max-width:145px;}
+.period-controls .button,.period-controls .text-button {font-size:.8125rem;min-height:38px;}
+.picker-panel {width:380px;}
+.picker-search input,.picker-options>button {font-size:.9375rem;}
+.picker-help,.picker-options small,.picker-empty {font-size:.8125rem;line-height:1.65;}
+.comparison-note,.comparison-note p,.picker-limit {font-size:.8125rem;line-height:1.65;}
+.comparison-note strong {font-size:.875rem;}
+.picker-options>button {padding:11px 10px;}
+.workspace-data-access,.workspace-data-access>.text-button {font-size:.8125rem;}
+.result-header h2,.overview-chart-grid .result-header h2 {font-size:1.25rem;font-weight:650;line-height:1.4;}
+.result-subtitle,.chart-unit,.chart-toolbar .segmented button,.legend-item,.legend-item strong {font-size:.875rem;}
+.chart-unit>span,.result-source-strip,.result-source-strip .text-button,.limits-toggle {font-size:.8125rem;}
+.chart-tooltip {font-size:.875rem;line-height:1.6;}
+.chart-tooltip small,.limits-preview {font-size:.75rem;}
+.limits-block ul,.data-table th,.data-table td,.data-table td:first-child {font-size:.875rem;line-height:1.65;}
+.data-table td small {font-size:.75rem;}
+.chart-toolbar {gap:14px;flex-wrap:wrap;}
+.side-card h3,.ask-card h3 {font-size:1.125rem;font-weight:650;}
+.latest-label,.latest-change,.ask-card p {font-size:.9375rem;line-height:1.65;}
+.latest-number {font-size:2rem;font-weight:600;}
+.latest-denominator,.latest-change span,.sample-note p,.ask-card>.text-button {font-size:.8125rem;}
+.coverage-banner strong {font-size:1.0625rem;}
+.coverage-banner p,.cross-source-note {font-size:.9375rem;line-height:1.7;}
+.source-signal h2 {font-size:1.125rem;font-weight:650;line-height:1.4;}
+.source-signal-indicator,.source-signal p {font-size:.9375rem;line-height:1.65;}
+.source-signal-value {font-size:2.75rem;font-weight:650;line-height:1.2;}
+.source-signal-value span,.source-signal-date,.source-signal-top,.source-signal-footer .text-button {font-size:.8125rem;}
+.overview-section-heading h2,.library-source-heading h2,.library-results-heading h2 {font-size:1.375rem;font-weight:650;}
+.data-release-note,.library-definition,.library-results-heading>span {font-size:.875rem;line-height:1.75;}
+.library-stats strong {font-size:2rem;font-weight:650;}
+.library-stats span,.library-source-card>span:not(.source-domain),.library-source-card small,.library-source-card em {font-size:.8125rem;}
+.library-search input {font-size:1rem;}
+.library-source-card strong {font-size:1rem;line-height:1.5;}
+.source-domain {font-size:.75rem;}
+.library-source-detail,.library-table th,.library-table td {font-size:.875rem;}
+.library-source-detail span,.library-table td:first-child>span,.library-table small {font-size:.8125rem;}
+.library-table td:first-child strong {font-size:.9375rem;}
+.library-table .button,.library-source-heading .text-button,.library-more .button {font-size:.8125rem;}
+.library-evidence-grid h3 {font-size:1.125rem;font-weight:650;}
+.library-evidence-grid p,.library-exclusions {font-size:.9375rem;line-height:1.75;}
+.library-evidence-grid small,.library-evidence-grid p.evidence-limit,.library-evidence-grid a {font-size:.8125rem;}
+.conversation-header h2 {font-size:1.125rem;font-weight:650;}
+.conversation-header>div>div>span,.context-strip,.context-scope,.message-author,.welcome-footnote {font-size:.8125rem;}
+.conversation-welcome h3,.canvas-heading h3 {font-size:1.5rem;font-weight:650;}
+.conversation-welcome>p,.message-assistant,.message-user,.answer-summary,.finding p,.answer-limits ul,.answer-actions ul,.answer-clarification p,.chat-error {font-size:1rem;line-height:1.75;}
+.prompt-grid strong {font-size:1rem;}
+.prompt-grid span,.answer-views button,.finding-citations button,.finding-citations a,.answer-limits summary,.connected-note p,.followup-suggestions button {font-size:.875rem;line-height:1.6;}
+.composer textarea {font-size:1rem;line-height:1.65;}
+.composer-hint,.scope-chips>span,.saved-view-note {font-size:.8125rem;}
+.drawer-header h2 {font-size:1.75rem;font-weight:650;}
+.drawer-intro,.source-card p,.source-card dl,.drawer-limitations {font-size:.9375rem;line-height:1.75;}
+.source-card h3 {font-size:1.125rem;}
+.source-publisher,.source-link,.drawer-section-title,.catalog-publishers>div,.drawer-release,.workspace-footer {font-size:.8125rem;}
+@media(max-width:1100px) {
+  .page-heading {flex-wrap:wrap;}
+  .page-heading h1 {font-size:2.25rem;}
+  .indicator-control-row {align-items:flex-start;flex-wrap:wrap;}
+  .indicator-control-row>.filter-field {flex-basis:100%;max-width:none;}
+}
+@media(max-width:650px) {
+  .page-heading h1 {font-size:2rem;line-height:1.15;}
+  .page-heading p {font-size:.9375rem;}
+  .page-heading .eyebrow {font-size:.6875rem;}
+  .sidebar .nav-item.active>span {font-size:.8125rem;}
+  .topic-tabs {gap:20px;overflow-x:auto;}
+  .topic-tabs>button {font-size:.9375rem;}
+  .filter-field {min-width:0;}
+  .filter-row .filter-field.source-field {min-width:0;flex:1 1 100%;grid-column:1 / -1;}
+  .select-wrap select,.library-filter select,.library-search input,.picker-search input {font-size:1rem;}
+  .filter-row {gap:14px;}
+  .indicator-tag {max-width:100%;font-size:.8125rem;}
+  .period-controls {gap:6px;}
+  .period-controls input {max-width:130px;}
+  .period-controls .button {padding:7px 9px;}
+  .picker-panel {left:12px;width:calc(100vw - 24px);max-width:none;top:18%;}
+  .picker-options {max-height:45vh;}
+  .explorer-coverage>div {min-width:0;flex-basis:calc(100% - 24px);}
+  .result-header h2,.overview-chart-grid .result-header h2 {font-size:1.125rem;}
+  .source-signal {padding:20px;}
+  .source-signal h2 {font-size:1.125rem;}
+  .source-signal-value {font-size:2.5rem;}
+  .overview-source-grid {grid-template-columns:1fr;gap:14px;}
+  .source-signal-top {display:flex;}
+  .source-signal-top>span:last-child {margin-top:0;}
+  .library-stats strong {font-size:1.75rem;}
+  .library-filter select,.library-search input {font-size:.9375rem;}
+  .library-definition {font-size:.8125rem;}
+  .conversation-welcome h3,.canvas-heading h3 {font-size:1.375rem;}
+  .prompt-grid {grid-template-columns:1fr;}
+  .workspace-data-access>span {min-width:0;}
+  .workspace-data-access>.text-button {margin-left:0;}
+  .workspace-footer,.workspace-footer .text-button {font-size:.75rem;}
+}
