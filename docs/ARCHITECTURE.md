@@ -1,5 +1,7 @@
 # Architecture
 
+Implementation reference checked 21 November 2026. See [Data](DATA.md) for the complete inventory, [Decision workspaces](DECISION-WORKSPACES.md) for filter behavior and [Deployment](DEPLOYMENT.md) for the running release.
+
 ## One analytical engine, two interaction modes
 
 Market Radar is a single Next.js App Router application with a Node.js runtime. React and Recharts render the workspace; TypeScript and Zod define the data and tool boundaries. Node's built-in SQLite module avoids an additional database process or third-party native database package.
@@ -135,7 +137,7 @@ The NDJSON response streams status, validated results, evidence, the final struc
 
 The retention design supports at least an initial question plus 20 follow-ups. A short ledger and the latest eight messages enter the prompt; older original turns and results can be fetched explicitly with `get_conversation_context`. It is not implemented as repeatedly sending all prior messages or relying solely on a lossy summary.
 
-The current limits are 100 questions per conversation and 100 active conversations. Capacity errors preserve existing history. Sessions have a sliding 48-hour backend lifetime; the HTTP-only browser cookie has a 24-hour lifetime and is renewed by session responses. Clearing or losing the cookie loses access to that anonymous conversation; there is no account-based recovery.
+The current limits are 100 questions per conversation and 100 active conversations. Capacity errors preserve existing history. Sessions have a sliding 48-hour backend lifetime; expired rows are cleaned up when a session is ensured, rather than by a background retention scheduler. The HTTP-only cookie has a 24-hour lifetime and is renewed by session responses. Tabs sharing the cookie share a conversation; separate profiles and local/production hosts are independent. Clearing or losing the cookie loses access; there is no account-based recovery. Starting a new conversation assigns a new cookie/session without immediately deleting the previous stored rows.
 
 SQLite uses WAL mode, bounded journal settings and a 32,768-page database cap. A per-session lock prevents concurrent analyses from overwriting context. Release IDs protect against mixing results from different releases.
 
@@ -149,6 +151,7 @@ SQLite uses WAL mode, bounded journal settings and a 32,768-page database cap. A
 | `POST /api/analytics` | Validate and execute a manual query; save the resulting scope |
 | `POST /api/analyst` | Bounded AI workflow as NDJSON |
 | `GET /api/conversation` | Current session history and referenced results |
+| `GET /api/conversation?resultId=...` | Recall up to eight exact stored result IDs from this session; unrelated or unavailable IDs are rejected |
 | `POST /api/conversation` | Start a new conversation |
 | `PATCH /api/conversation` | Persist an explicit decision/chart context handoff in the current session |
 

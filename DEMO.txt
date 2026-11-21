@@ -1,38 +1,62 @@
 Market Radar — three-minute demo
+Frozen release 0.6.0-local. Checked 21 November 2026.
 
-0:00–0:40 | See the sources, then explore
-Start with Market overview: BFS industry vacancies, Eurostat occupational ads,
-SECO registrations and SEM participant context. Each has its own period and unit.
-Open Data library to show national and regional coverage, then explore Python and Docker.
-In the Explorer, show all source datasets in the Source selector. Eurostat occupational
-groups open under Roles; Skills correctly has ITBoard evidence only. Each source
-keeps its own definition rather than pretending to measure the same population.
-Switch to Count, then Data. Show original dates, counts, denominators and sources.
-Explain: these are active-ad snapshots from one platform, not the whole Swiss market.
+BEFORE THE DEMO
+Open the site and check /healthz. Confirm AI with a real question in a separate
+rehearsal conversation: "ai: configured" alone is not a provider connectivity test.
+Use a fresh demo conversation and keep the manual Explorer available as fallback.
+The model's wording/tool sequence may vary; demonstrate evidence, not a scripted answer.
 
-0:40–1:30 | Ask a question
-AI Analyst: "How has Python changed in the available data?"
-Follow up: "Compare with Docker."
-Watch capability discovery and deterministic calculations update the working view.
-In the last two snapshots, Python rises from 115/582 to 188/770.
-Docker rises from 99 to 123 ads, but its share falls from 17.01% to 15.97%.
-The denominator makes the interpretation more useful than a simple count chart.
+0:00–0:25 | One workspace, several kinds of evidence
+Open /overview: BFS industry vacancies, Eurostat occupational ads, SECO registrations
+and SEM participant context each have their own period and unit.
+Briefly open /opportunities: change IT Support to Data Analyst. Only the role panel
+changes; junior and technology evidence have separate scopes.
 
-1:30–2:05 | Test the limits
+0:25–0:50 | Manual investigation
+Open /explore, Skills, ITBoard, Switzerland. Select Python and Compare with Docker.
+Show Share, Count, the Data table and source drawer. These are active-ad snapshots
+from one platform, not the entire Swiss market. The selector exposes all ten
+datasets, but only ITBoard supports named skills.
+
+0:50–1:40 | Ask, calculate, interpret
+Choose Ask about this view:
+  "How has Python changed in the last two available snapshots?"
+Follow up:
+  "Compare with Docker. Explain counts and shares."
+Watch status updates, verified results and the linked chart. The final narrative
+appears after validation; unvalidated answer tokens are not streamed.
+For this frozen release, 29 October to 15 November 2026:
+  Python: 115/582 to 188/770 ads; share about 19.76% to 24.42%.
+  Docker: 99/582 to 123/770 ads; share about 17.01% to 15.97%.
+Docker's count rises while its share falls. The changing denominator matters.
+
+1:40–2:05 | An honest boundary
 Ask: "And for junior developers?"
-The analyst must explain that junior-by-skill data is unavailable and label any
-broader junior indicator as a separate alternative. Missing is not zero.
+The analyst should explain that junior-by-skill data is unavailable. A separate
+junior indicator may be offered, clearly labelled as a different scope.
+No guessed values or unsupported filter should be presented as the requested answer.
 
-2:05–2:40 | Support a decision
+2:05–2:45 | Participant context
+Open /participants. Choose Refugees with permit B and Zürich canton.
+Show the snapshot: 7,051 working-age people, 3,138 registered employed,
+published rate 44.5%. Choose Ask about this brief, then ask:
+  "What about Bern? What can we infer, and what data is missing?"
+The group should remain refugee B while the canton changes. These are all-sector
+population figures, not IT placements, programme outcomes or a trend.
+
+2:45–3:00 | Verify and continue
+Open a cited result and its source link. Show that it is the same result available
+in the Explorer. Saved questions, results and decision context survive reload in
+this browser; the context design supports the initial question plus 20 follow-ups.
+
+OPTIONAL EXTENSION (outside the three-minute core)
 Ask: "Should Powercoders expand its AI training programme?"
-The analyst can inspect the ML / AI tag and approved research notes, but must
-also identify missing partner requirements, programme outcomes, costs and capacity.
-Expect a cautious pilot or further evidence gathering, not a fabricated yes/no.
+The analyst can inspect the ML / AI tag and approved research notes, but should
+identify missing partner requirements, programme outcomes, costs and capacity.
+Expect a conditional investigation or pilot suggestion, not an unsupported yes/no.
 
-2:40–3:00 | Verify and continue
-Open a cited result and its publisher link. Return to Explore this view.
-Show that manual filters and AI use the same result, and that conversation
-history and original results survive reload. Twenty follow-ups are supported.
-
-The dataset is a frozen verified release, not a live feed. AI needs the server
-API key; the manual Explorer remains available when AI is unavailable.
+FALLBACK
+If AI is unavailable or times out, show the same table, brief and sources manually.
+State that the AI step is unavailable; do not present a prior answer as a fresh
+live response. The dataset is a frozen release.
