@@ -4,6 +4,8 @@ An evidence-led workspace for Powercoders to explore the Swiss IT labour market.
 
 The MVP uses a **frozen, reviewed data release**, not a live feed or a census of Swiss vacancies. The interface is English; the analyst can answer in the user's language.
 
+**Live MVP:** [hackatonprojekt.net](https://hackatonprojekt.net). The production service runs the same analytics engine and approved data as the local workspace, with a separate private conversation store.
+
 ## What is implemented
 
 - **Market overview:** six separate views of skills, industry vacancies, occupational advertisements, registered vacancies and participant context.
@@ -109,4 +111,10 @@ Next.js App Router, TypeScript, Tailwind CSS, Recharts and Zod run as one Node.j
 
 See [Architecture](docs/ARCHITECTURE.md) for contracts, tools, limits and persistence; [local run notes](RUN-LOCAL.txt) for a quick checklist; and [the three-minute demo](DEMO.txt) for the presentation flow.
 
-This is a local MVP. Scheduled collection, email reports, authentication, public deployment automation and a reproducible raw-source acquisition pipeline are not implemented. The health endpoint is `/healthz`; AI availability is reported separately from data availability, and manual analytics continues without an AI connection.
+Scheduled collection, email reports, authentication, CI/CD and a reproducible raw-source acquisition pipeline are not implemented. The health endpoint is `/healthz`; AI availability is reported separately from data availability, and manual analytics continues without an AI connection.
+
+## Production deployment
+
+The VPS runs a native Linux ARM64 production build in one non-root Docker service behind Caddy HTTPS. The verified SQLite dataset is mounted read-only; conversations persist outside the container. The server API key is supplied through a private runtime environment file and is excluded from the image and repository.
+
+See [Deployment](docs/DEPLOYMENT.md) for the Docker/Compose workflow, resource limits, backup command, rollout and rollback. Reproduce local-versus-production checks with `node --use-system-ca scripts/check-production.mjs` while both apps are available. The check validates all catalog metadata, representative calculations from every active source, cookies and public endpoint protections; it does not call the model. Private test sessions and reports remain in `.runtime/`.

@@ -1,0 +1,30 @@
+# Explicit build-context allowlist. Data, secrets and private conversations
+# never enter an image layer or the Docker build context.
+**
+!Dockerfile
+!.dockerignore
+!package.json
+!package-lock.json
+!next.config.ts
+!next-env.d.ts
+!tsconfig.json
+!postcss.config.mjs
+!src/
+!src/**
+!public/
+!public/**
+# Defense in depth for unexpectedly nested local files.
+**/.env
+**/.env.*
+**/*.env
+**/*.key
+**/*.pem
+**/*.p12
+**/*.pfx
+**/srv.txt
+**/AGENTS.md
+**/.runtime/**
+**/data/**
+**/*.sqlite
+**/*.sqlite3
+**/*.db

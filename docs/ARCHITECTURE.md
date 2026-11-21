@@ -147,7 +147,7 @@ Mutation endpoints check origin and fetch-site headers. Anonymous session cookie
 
 `npm run build` produces a standalone Next.js build. `npm start` loads local environment variables, installs static assets into that output and launches on loopback, port 3000 by default. `/healthz` can support external process supervision. Runtime secrets, conversations and test output are excluded from file tracing.
 
-The checked local workflow is Windows with Node.js 24.9+. The intended VPS architecture is Linux ARM64, but this repository does not provide a completed server deployment, service definition, HTTPS setup or backup automation. Any target deployment must verify the production build and runtime dependencies there and persist the conversation database separately from replaceable application files.
+The checked local workflow is Windows with Node.js 24.9+. Production at `https://hackatonprojekt.net` runs a native Linux ARM64 standalone build in a single non-root Docker container behind the host's Caddy HTTPS proxy. The approved dataset is a read-only bind mount; the writable conversation directory is a separate persistent mount. The container has a read-only root filesystem, bounded temporary storage, a 2 GiB memory limit, two CPUs, rotated logs and an `unless-stopped` restart policy. Its health check reads the real catalog. `deployment/backup-runtime.py` creates and verifies private online SQLite backups; backup scheduling and off-host copies are not configured. See [Deployment](DEPLOYMENT.md) for the reproducible process and rollback boundaries.
 
 ## Validation and known boundaries
 

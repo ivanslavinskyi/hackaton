@@ -1,6 +1,6 @@
 # Validation record
 
-Checked locally on 21 November 2026. This records representative scenarios and automated invariants, not a guarantee that every possible natural-language question will receive a correct interpretation.
+Checked locally and on `https://hackatonprojekt.net` on 21 November 2026. This records representative scenarios and automated invariants, not a guarantee that every possible natural-language question will receive a correct interpretation.
 
 ## Active data scope
 
@@ -68,3 +68,22 @@ node scripts/qa-comparison-ui.mjs
 ```
 
 Use `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` or `PLAYWRIGHT_CHANNEL` for a different browser installation. Repeated full suites can hit the same rate limits as real users; allow the rate window to clear between reruns. Test screenshots and reports remain in ignored `test-results/`.
+
+## Production acceptance
+
+The final service was built natively on Linux ARM64 from the same application source and lockfile. Docker runs one non-root Next.js process behind the existing Caddy HTTPS proxy. Deployment added the favicon and runtime/service configuration; it did not change analytical calculations or source policy.
+
+- Public serving-file SHA-256 checksums match the local copies. `/healthz` reports 595 active series and configured AI.
+- `scripts/check-production.mjs` passed six groups of checks and 11 queries: all 10 source datasets plus a Python/Docker comparison. The full bootstrap catalog, inventory, six overview panels and deterministic result objects match local results, excluding generation timestamps only.
+- HTTPS cookie flags are Secure, HttpOnly and SameSite=Lax. Cross-origin mutations return 403, invalid analytical parameters return 400, and private file paths return 404. HTTP and www redirects work; app ports bind only to host loopback.
+- The live provider completed all 10 source scenarios and the Python-to-Docker follow-up. A separate programme-expansion question used ITBoard, Eurostat and HSLU evidence, returned two linked charts and explained missing programme outcome and capacity information.
+- NDJSON events arrived progressively through the public proxy; the programme question produced its first status within a second, intermediate analytical results and the final validated answer.
+- After replacing the production container, the entire saved AI conversation, results, evidence and scope were unchanged. A saved manual result also matched exactly. A further real-model follow-up reused the previous evidence and both charts successfully.
+- An isolated candidate with no API key returned the expected AI-unavailable response while manual analytics and data health remained operational.
+- Production browser checks passed 10 source transitions, 22 manual views, comparison compatibility/limits, 40 AI view combinations and 12 context transfers. Final desktop/mobile checks found no JavaScript errors, console errors or horizontal overflow at 390 px. UI model transport was simulated; the live-provider checks above were separate.
+- The final API smoke test passed. A private online conversation backup passed SQLite integrity checking; an independent synthetic WAL test verified that committed WAL content is included and later writes do not alter the backup.
+- Resource limits, read-only data/root mounts, restart policy and log rotation were inspected. The application was healthy after recreation; the temporary candidate was stopped.
+
+Windows QA retained TLS verification and trusted the workstation's configured system CA. Browser tests used HTTP/2 after the local inspected connection produced QUIC transport errors; no server TLS weakening or certificate bypass was applied. A missing favicon found during inspection was fixed and the final browser console was clean.
+
+Private production test transcripts, session cookies and reports stay in ignored `.runtime/` and `test-results/`; neither credentials nor conversation data are published. Deployment operations, backup and rollback instructions are in [Deployment](DEPLOYMENT.md).
