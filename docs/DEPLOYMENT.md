@@ -143,3 +143,10 @@ Bootstrap and conversation-loading requests have a 10-second deadline covering b
 The routing release uses `/srv/hackaton/releases/20261121-routing`, image `market-radar:20261121-routing`, with the same Compose project, shared dataset and conversation directory. The preceding accepted release `/srv/hackaton/releases/20261121-sidebar-loading` remains the rollback target. The exact deployed commit and acceptance results are recorded in the server release's `deployment-record.json`.
 
 Caddy continues proxying every application route to Next.js; no static fallback or rewrite to `/` is needed. Preserve the existing HTTP/1.1 and HTTP/2 configuration and `Alt-Svc: clear`. Verify all five direct page URLs, the root redirect, a real 404, copied analytical filters and AI continuity with `scripts/qa-routing.mjs`. There are no database migrations or data-release changes in this update.
+
+
+## Decision workspaces update — 21 November 2026
+
+The decision-workspaces release uses `/srv/hackaton/releases/20261121-decisions`, image `market-radar:20261121-decisions`. The previous accepted routing release remains the rollback target. Dataset and shared runtime mounts are unchanged. A pre-cutover online backup is required: this increment creates an additive `conversation_briefs` table for per-session decision context. It preserves all existing tables/rows and is compatible with rolling back to the preceding application.
+
+Verify `/opportunities`, `/participants`, the ordinary Explorer and AI, including a participant group/canton follow-up. Run `scripts/qa-decision-workspaces.mjs` for deterministic browser checks and `scripts/live-decision-check.mjs` for a separate paid-provider check. The server deployment record contains exact revisions, backup path and acceptance results. Caddy configuration remains unchanged.

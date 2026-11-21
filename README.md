@@ -9,10 +9,12 @@ The MVP uses a **frozen, reviewed data release**, not a live feed or a census of
 ## What is implemented
 
 - **Market overview:** six separate views of skills, industry vacancies, occupational advertisements, registered vacancies and participant context.
+- **Graduate opportunities:** all 35 published national role tags, a separate junior history, whole-sample technology ranking and BFS industry context. Sparse/small-count evidence is labelled; no graduate-fit score or unavailable cross-tab is inferred.
+- **Participant context:** separate SEM F, refugee B and S populations, working-age and employed counts, and employment rates for Switzerland and all 26 cantons. One published snapshot, across all sectors.
 - **Data library:** all 595 approved indicator series, searchable by source and topic. The default is the 168 national series; regional slices are an explicit option.
 - **Market explorer:** source, indicator, geography, period and measure controls; history, snapshots and compatible rankings; charts and underlying values. The source selector lists all 10 datasets and changes topic when a source does not support the current topic. Choose an indicator directly, then add compatible comparisons.
 - **Sources & coverage:** a dedicated directory for all active datasets, source dates, research evidence and limitations.
-- **AI Analyst:** six typed tools, backend-generated chart data, source references and structured findings. Original questions and results remain retrievable across at least an initial question and 20 follow-ups.
+- **AI Analyst:** seven typed tools, backend-generated chart data, source references and structured findings. Original questions and results remain retrievable across at least an initial question and 20 follow-ups.
 
 Named skill trends currently come **only from ITBoard**. Eurostat occupational groups are available under **Roles**. Other sources provide complementary market or participant context; switching source does not imply that the same skill or population exists there.
 
@@ -20,7 +22,7 @@ Compare appears only when the current selection has compatible alternatives. Oth
 
 ## Pages and shareable analysis
 
-The workspace has dedicated routes: `/overview`, `/library`, `/explore`, `/analyst` and `/sources`. `/` redirects to the overview. Explorer filters and chart selection are encoded in the URL; library links retain search and filters. Direct links, reload and browser Back/Forward restore the corresponding view.
+The workspace has dedicated routes: `/overview`, `/opportunities`, `/participants`, `/library`, `/explore`, `/analyst` and `/sources`. `/` redirects to the overview. Explorer filters and chart selection are encoded in the URL; library links retain search and filters. Direct links, reload and browser Back/Forward restore the corresponding view.
 
 The shared layout preserves the conversation, unsent question and in-flight AI analysis while switching pages. Shared links contain public analytical filters only, never private chat history. See [Routing](docs/ROUTING.md) for parameters, privacy and recovery behavior.
 
@@ -100,6 +102,7 @@ Browser regression checks use an isolated headless browser:
 
 ```powershell
 $env:MARKET_RADAR_TEST_URL = "http://127.0.0.1:3000"
+node scripts/qa-decision-workspaces.mjs
 node scripts/qa-routing.mjs
 node scripts/qa-explorer.mjs
 node scripts/qa-full-data-ui.mjs
@@ -117,7 +120,7 @@ See [Validation](docs/VALIDATION.md) for the checked source coverage, live AI sc
 
 Next.js App Router, TypeScript, Tailwind CSS, Recharts and Zod run as one Node.js application. Public analytics use a read-only SQLite file; private conversations use a separate writable SQLite file. There is no arbitrary SQL or generated-code tool, vector database, queue, or separate Python backend.
 
-See [Architecture](docs/ARCHITECTURE.md) for contracts, tools, limits and persistence; [local run notes](RUN-LOCAL.txt) for a quick checklist; and [the three-minute demo](DEMO.txt) for the presentation flow.
+See [Decision workspaces](docs/DECISION-WORKSPACES.md) for the implemented scope and [Architecture](docs/ARCHITECTURE.md) for contracts, tools, limits and persistence; [local run notes](RUN-LOCAL.txt) for a quick checklist; and [the three-minute demo](DEMO.txt) for the presentation flow.
 
 Scheduled collection, email reports, authentication, CI/CD and a reproducible raw-source acquisition pipeline are not implemented. The health endpoint is `/healthz`; AI availability is reported separately from data availability, and manual analytics continues without an AI connection.
 

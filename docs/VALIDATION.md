@@ -108,3 +108,12 @@ The routing update passed 69 deterministic tests, TypeScript checking and the op
 The existing Explorer suite passed all 10 source transitions and 22 offered modes. The AI workspace suite passed 40 source/view combinations and 12 context transfers. AI transport in these browser suites is simulated; calculations use the real backend. Data, analytics rules and the server conversation schema are unchanged.
 
 The deployed routing release also passed all ten routing scenarios over public HTTPS with no JavaScript errors. Local/production verification passed six check groups and eleven exact result comparisons (one per source plus Python/Docker). A separate real-provider browser request compared Python and Docker in the two latest snapshots, displayed cited evidence, and restored the conversation after reload. The source metadata columns were checked for overlap at 390 px. The ARM64 container is healthy; the dataset checksum is unchanged and both the live conversation database and pre-cutover online backup passed SQLite integrity checks.
+
+
+## Decision workspaces — 21 November 2026
+
+The suite now passes 73 tests. New checks cover all 35 national ITBoard role tags and independent junior/skill/industry panels, all three SEM populations across Switzerland and 26 cantons, exact numerators/denominators and source IDs, and rejection of unavailable role/status/geography combinations. A mocked provider retrieves the same decision brief as the manual page, preserves the group on a canton follow-up and retains context through the initial question plus 20 follow-ups, with another session unable to read it.
+
+`scripts/qa-decision-workspaces.mjs` checks role selection, sparse/small-count notices, exact Explorer handoff, all-group and single-group participant views, backend/UI number agreement, URL filters, reload, rapid Back navigation, mobile layout at 390 px, invalid geography recovery, and typed AI context through navigation/reload. AI transport is simulated and numerical results use the real backend. The topbar country label is absent; result geography remains visible. TypeScript checking and the existing routing suite also pass.
+
+The final local production build passed the decision-workspace browser suite. A separate real-provider check retrieved all four opportunity panels, all three metrics for permit F in Zürich, then switched to Bern while retaining permit F. The answer and updated decision context survived reload. These live checks make provider calls; the automated 20-follow-up test uses a mock provider.

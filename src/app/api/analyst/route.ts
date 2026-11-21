@@ -1,3 +1,4 @@
+import {decisionScopeSchema} from '@/lib/decision-contracts';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { runAnalyst } from '@/lib/analyst';
@@ -6,7 +7,7 @@ import { querySchema, type ChatEvent } from '@/lib/contracts';
 import { attachSession, checkOrigin, errorResponse, HttpError, rateLimit, readBody, sessionFor } from '@/lib/http';
 export const runtime='nodejs';
 export const maxDuration=60;
-const requestSchema=z.object({message:z.string().trim().min(1).max(4000),context:querySchema.nullable().optional()}).strict();
+const requestSchema=z.object({message:z.string().trim().min(1).max(4000),context:querySchema.nullable().optional(),brief:decisionScopeSchema.nullable().optional()}).strict();
 export async function POST(req:NextRequest) {
   try {
     checkOrigin(req);rateLimit(req,'analyst');const body=requestSchema.parse(await readBody(req));
@@ -17,7 +18,7 @@ export async function POST(req:NextRequest) {
       async start(controller) {
         const encoder=new TextEncoder();let closed=false;
         const send=(event:ChatEvent)=>{if(!closed&&!abort.signal.aborted)try {controller.enqueue(encoder.encode(JSON.stringify(event)+'\n'));}catch {closed=true;abort.abort();}};
-        try { await runAnalyst(id,body.message,body.context||null,send,abort.signal); }
+        try { await runAnalyst(id,body.message,body.context||null,send,abort.signal,body.brief); }
         catch(error) {
           const known=error instanceof Error && 'code' in error;
           send({type:'error',code:known?String((error as {code:string}).code):'ANALYST_ERROR',message:known?(error as Error).message:'The analyst could not complete this request. Your previous results are still available.'});

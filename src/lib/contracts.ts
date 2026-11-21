@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type {DecisionScope} from './decision-contracts';
 
 export const querySchema = z.object({
   seriesIds: z.array(z.string().max(160)).max(4).default([]),
@@ -33,7 +34,7 @@ export const answerSchema = z.object({
 }).strict();
 export type AnalystAnswer = z.infer<typeof answerSchema>;
 export type ChatTurn = { id:number; role:'user'|'assistant'; content:string; createdAt:string; answer?:AnalystAnswer; resultIds:string[]; error?:string };
-export type ChatEvent = {type:'status';message:string}|{type:'result';result:AnalyticsResult}|{type:'evidence';evidence:Evidence[]}|{type:'answer';answer:AnalystAnswer;turnId:number}|{type:'error';code:string;message:string};
+export type ChatEvent = {type:'status';message:string}|{type:'result';result:AnalyticsResult}|{type:'evidence';evidence:Evidence[]}|{type:'answer';answer:AnalystAnswer;turnId:number}|{type:'error';code:string;message:string}|{type:'brief';scope:DecisionScope|null};
 export type DataSourceInventory = SourceRef & {family:string;domain:'skills'|'demand'|'participants'|'regional';seriesCount:number;nationalSeriesCount:number;observations:number;nationalObservations:number;geographies:string[];first:string;last:string;metrics:string[];sampleSeriesIds:string[];limitations:string[];reviewedOn?:string|null;attribution?:string|null;termsUrl?:string|null};
 export type DataInventory = {release:string;sourcePolicyVersion:string;checkedOn:string;frozen:true;counts:{observations:number;nationalObservations:number;series:number;nationalSeries:number;sources:number};sources:DataSourceInventory[];evidence:Evidence[];excludedSources:{id:string;name:string;status:string;reason:string}[];limitations:string[]};
 export type MarketOverviewPanel = {id:string;title:string;description:string;result:AnalyticsResult};

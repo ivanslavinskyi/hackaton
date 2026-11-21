@@ -15,12 +15,12 @@ export async function GET(req:NextRequest) {
       if(results.length!==new Set(resultIds).size)throw new HttpError(404,'RESULT_NOT_FOUND','This result is not available in the current conversation.');
       return attachSession(NextResponse.json({results,scope:store.getScope(id)}),req,id);
     }
-    return attachSession(NextResponse.json({turns:store.getTurns(id),results:store.getResults(id),scope:store.getScope(id),evidence:store.getEvidence(id).length?store.getEvidence(id):searchEvidence('')}),req,id);
+    return attachSession(NextResponse.json({turns:store.getTurns(id),results:store.getResults(id),scope:store.getScope(id),brief:store.getBriefScope(id),evidence:store.getEvidence(id).length?store.getEvidence(id):searchEvidence('')}),req,id);
   } catch(error) {return errorResponse(error);}
 }
 export async function POST(req:NextRequest) {
   try {
     checkOrigin(req);rateLimit(req,'session');const id=randomBytes(32).toString('hex');getConversationStore().ensureSession(id);
-    return attachSession(NextResponse.json({turns:[],results:[],scope:null,evidence:[]}),req,id);
+    return attachSession(NextResponse.json({turns:[],results:[],scope:null,brief:null,evidence:[]}),req,id);
   } catch(error) {return errorResponse(error);}
 }

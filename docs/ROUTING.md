@@ -6,6 +6,8 @@ Each workspace screen has a real Next.js App Router page. The shared layout keep
 | --- | --- |
 | `/` | Server redirect to `/overview` (307) |
 | `/overview` | Six sourced market and participant panels |
+| `/opportunities` | Role investigation with separate junior, technology and industry evidence |
+| `/participants` | SEM population context by status group and geography |
 | `/library` | Searchable indicator catalog |
 | `/explore` | Manual filters, calculations and chart controls |
 | `/analyst` | Conversation and linked analytical canvas |
@@ -59,3 +61,9 @@ Switching workspace pages preserves the draft and an in-flight AI request. Resul
 - `scripts/qa-routing.mjs`: browser navigation, reload, copied links, error recovery, mobile sources and delayed history/AI transport.
 
 The browser routing suite uses real analytics with simulated AI transport; it does not make provider calls. Run it with `MARKET_RADAR_TEST_URL` pointing to the local or deployed app.
+
+## Decision workspace filters
+
+`/opportunities?role=itboard_csv_rolle_it-support` accepts a published national role ID. The junior, technology and industry panels keep their independent scopes. `/participants?group=f&geography=CH-ZH` accepts `group=all|f|b|s` and `CH` or one of the 26 published canton IDs. Defaults are IT Support and all population groups in Switzerland. Both pages preserve filters on reload and Back/Forward and reject unsupported intersections.
+
+Ask about this brief prepares a free-form question and a separate validated decision scope. The AI page shows that context, offers Use chart only to clear it, and retains it with the browser-session conversation after a sent question. The draft itself remains in memory only. Opening a single panel in Explorer or AI uses its ordinary analytical query. Decision-page URLs contain only public filters, never conversation identity.

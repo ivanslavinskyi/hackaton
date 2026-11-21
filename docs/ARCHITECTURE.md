@@ -23,7 +23,7 @@ The LLM chooses investigations and explains returned evidence. The backend selec
 
 ## Pages and persistent workspace
 
-Five App Router pages share `src/app/(workspace)/layout.tsx`. Their common React context owns bootstrap data, active analytics, draft text and conversation streaming, so page transitions do not refetch the catalog or interrupt AI. Each page provides its own metadata; the root redirects to `/overview` and unknown paths return 404.
+Seven App Router pages share `src/app/(workspace)/layout.tsx`. Their common React context owns bootstrap data, active analytics, draft text and conversation streaming, so page transitions do not refetch the catalog or interrupt AI. Each page provides its own metadata; the root redirects to `/overview` and unknown paths return 404.
 
 `src/lib/workspace-routing.ts` validates and serializes public filter state. Explorer/Analyst URLs use the same `QuerySpec` as the engine plus an allowed view. Library URLs retain discovery filters. Explicit URLs take precedence over saved session scope. Navigation revisions and cancelled superseded queries prevent stale history or analytics from overwriting a newly selected route. Conversation content and identity never enter URLs. See [Routing](ROUTING.md) for the full route contract and reload semantics.
 
@@ -103,6 +103,7 @@ Older saved Eurostat occupational queries used `topic: context`. The engine narr
 
 | Tool | Responsibility |
 | --- | --- |
+| `get_decision_brief` | The same bounded opportunity/participant bundle as the manual decision pages; up to nine separate engine results |
 | `get_data_inventory` | Full source families, coverage, dates, sample IDs, approved evidence and exclusions |
 | `get_capabilities` | Search and page real catalog entries by topic, source, geography or exact IDs |
 | `query_metrics` | Deterministic history, snapshot or ranking |
@@ -144,6 +145,7 @@ SQLite uses WAL mode, bounded journal settings and a 32,768-page database cap. A
 | --- | --- |
 | `GET /healthz` | Data health and whether an AI key is configured; not a live provider connectivity test |
 | `GET /api/bootstrap` | Catalog, inventory, initial result and multi-source overview |
+| `POST /api/decision-brief` | Read-only bounded decision bundle; validated filters, same-origin and analytics request limit |
 | `POST /api/analytics` | Validate and execute a manual query; save the resulting scope |
 | `POST /api/analyst` | Bounded AI workflow as NDJSON |
 | `GET /api/conversation` | Current session history and referenced results |
@@ -160,3 +162,9 @@ The checked local workflow is Windows with Node.js 24.9+. Production at `https:/
 `npm test` covers verified values and denominators, catalog access, compatibility failures, source/topic transitions, saved-query migration, invalid inputs, conversation isolation and 20-follow-up recall. AI unit tests use a mock provider. `npm run test:api` checks a running local app. `npm run data:verify` checks the installed frozen release. Browser QA helpers require an installed browser and a running app; configure `MARKET_RADAR_TEST_URL` and, if needed, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` or `PLAYWRIGHT_CHANNEL`. They are not a complete deployment CI suite.
 
 The prototype does not implement live collection, email reports, authentication, unrestricted source addition, role-by-skill intersections, forecasting, candidate matching or programme-outcome measurement. Provenance and numerical validation improve reliability, but do not turn a platform sample or administrative statistic into a complete, representative measure of Swiss IT hiring.
+
+## Decision brief contract
+
+`decisionScopeSchema` accepts a workspace kind plus documented role, group and geography filters; backend validation rejects irrelevant dimensions and checks catalog availability. `getDecisionBrief` calls the existing deterministic engine for every panel. Participant groups and metrics remain separate results with their own IDs and sources. The HTTP endpoint and AI tool call this same service; no synthetic cross-source result or new numerical dataset is introduced. Bootstrap remains unchanged so these panels load only when requested.
+
+`POST /api/analyst` additionally accepts `brief`: a validated decision scope, null to clear it, or omission to retain stored scope. The server saves it in the additive `conversation_briefs` table, keyed by the existing anonymous session. The AI state receives it as starting context; the latest user question still takes precedence. A successful brief tool emits a typed `brief` event, saves each result, and lets the existing answer validator check citations and numbers. `GET /api/conversation` returns the saved brief alongside the existing history. Original messages, 20-follow-up recall, session isolation and six-tool-call budget remain intact; seven tool definitions are available. The added table is created with IF NOT EXISTS and does not alter existing rows; the previous application can still read the conversation store on rollback.

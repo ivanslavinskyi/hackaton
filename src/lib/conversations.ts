@@ -4,6 +4,7 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import type { AnalyticsResult, AnalystAnswer, ChatTurn, Evidence, QuerySpec } from './contracts';
 import {isEvidenceEnabled,isQueryEnabled,isResultEnabled} from './source-policy';
+import {decisionScopeSchema,type DecisionScope} from './decision-contracts';
 
 const SESSION_LIFETIME = 48 * 60 * 60 * 1000;
 export const DATA_RELEASE = '0.6.0-local';
@@ -80,6 +81,10 @@ export class ConversationStore {
         created_at TEXT NOT NULL, name TEXT NOT NULL, arguments_json TEXT NOT NULL,
         outcome_json TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS conversation_briefs (
+        session_id TEXT PRIMARY KEY REFERENCES conversations(id) ON DELETE CASCADE,
+        scope_json TEXT NOT NULL
+      );
     `);
   }
 
@@ -126,6 +131,19 @@ export class ConversationStore {
     const row = this.session(id);
     const scope=row.scope_json ? JSON.parse(row.scope_json) as QuerySpec : null;
     return scope&&isQueryEnabled(scope)?scope:null;
+  }
+
+  getBriefScope(id:string):DecisionScope|null {
+    this.session(id);
+    const row=this.db.prepare('SELECT scope_json FROM conversation_briefs WHERE session_id=?').get(id) as {scope_json:string}|undefined;
+    if(!row)return null;
+    const parsed=decisionScopeSchema.safeParse(JSON.parse(row.scope_json));return parsed.success?parsed.data:null;
+  }
+  setBriefScope(id:string,scope:DecisionScope|null){
+    this.session(id);
+    if(scope===null){this.db.prepare('DELETE FROM conversation_briefs WHERE session_id=?').run(id);return;}
+    const value=decisionScopeSchema.parse(scope);
+    this.db.prepare('INSERT INTO conversation_briefs(session_id,scope_json) VALUES(?,?) ON CONFLICT(session_id) DO UPDATE SET scope_json=excluded.scope_json').run(id,JSON.stringify(value));
   }
 
   setScope(id: string, scope: QuerySpec, origin: 'manual' | 'analyst' | 'restored' = 'analyst') {

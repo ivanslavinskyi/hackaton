@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { WORKSPACE_ROUTES, workspaceMode, analysisHref, parseAnalysisSearch, queryIdentity, updateFilterURL, type WorkspaceMode } from '@/lib/workspace-routing';
 import { SourceDirectory } from './source-directory';
+import {DecisionWorkspace} from './decision-workspace';
+import {PARTICIPANT_GROUPS,type DecisionScope} from '@/lib/decision-contracts';
 import { Activity, BookOpen, BriefcaseBusiness, Building2, Check, ChevronDown, CircleAlert, CircleHelp, Compass, Database, ExternalLink, FileCheck2, FileText, Filter, GraduationCap, History, Info, Layers3, LoaderCircle, MessageSquare, Plus, Radar, RefreshCw, Search, Send, SlidersHorizontal, Sparkles, Square, Table2, X } from 'lucide-react';
 import type { AnalyticsResult, AnalystAnswer, Bootstrap, CatalogItem, ChatEvent, ChatTurn, Evidence, QueryInput, QuerySpec, ViewType } from '@/lib/contracts';
 import { Button } from './ui/button';
@@ -14,7 +16,7 @@ import { formatDate, formatValue, geographyLabel, LatestReadout, ResultView } fr
 
 type Topic = 'skills'|'roles'|'context'|'experience';
 type Mode = WorkspaceMode;
-const MODE_COPY={sources:{title:'Know where the numbers come from.',description:'Sources, reporting dates, methodology and the limits of this data release.',label:'Sources & coverage'},overview:{title:'The market, from more than one angle.',description:'Read Swiss labour-market signals with their sources, dates and limitations.',label:'Market overview'},library:{title:'All the evidence. Clearly organised.',description:'Discover every approved indicator, from national demand to participant context.',label:'Data library'},explore:{title:'A clearer view of the market.',description:'Explore demand, compare skills, and put the numbers in context.',label:'Market explorer'},analyst:{title:'Good questions. Grounded answers.',description:'Follow a question through the data, the evidence, and the next decision.',label:'AI Analyst'}};
+const MODE_COPY={opportunities:{title:'From market signals to better programme decisions.',description:'Investigate roles and entry-level signals, with the limits of each source in view.',label:'Graduate opportunities'},participants:{title:'Understand the people behind the programme.',description:'Explore published population and employment context by status group and canton.',label:'Participant context'},sources:{title:'Know where the numbers come from.',description:'Sources, reporting dates, methodology and the limits of this data release.',label:'Sources & coverage'},overview:{title:'The market, from more than one angle.',description:'Read Swiss labour-market signals with their sources, dates and limitations.',label:'Market overview'},library:{title:'All the evidence. Clearly organised.',description:'Discover every approved indicator, from national demand to participant context.',label:'Data library'},explore:{title:'A clearer view of the market.',description:'Explore demand, compare skills, and put the numbers in context.',label:'Market explorer'},analyst:{title:'Good questions. Grounded answers.',description:'Follow a question through the data, the evidence, and the next decision.',label:'AI Analyst'}};
 const PROMPTS = [
   {title:'Follow a skill',text:'How has Python changed in the available data?',icon:Activity},
   {title:'Compare the signals',text:'Compare Python with Docker. Explain both counts and shares.',icon:Layers3},
@@ -64,6 +66,9 @@ function useWorkspaceState() {
   const resultsRef=useRef<Record<string,AnalyticsResult>>({});
   const [evidence,setEvidence]=useState<Evidence[]>([]);
   const [message,setMessage]=useState('');
+  const [briefScope,setActiveBriefScope]=useState<DecisionScope|null>(null);
+  const briefVersion=useRef(0);
+  function setBriefScope(value:DecisionScope|null){briefVersion.current++;setActiveBriefScope(value);}
   const [chatBusy,setChatBusy]=useState(false);
   const [chatStatus,setChatStatus]=useState('');
   const [chatError,setChatError]=useState('');
@@ -97,12 +102,17 @@ function useWorkspaceState() {
     setResults(resultsRef.current);
   },[]);
   const loadConversation=useCallback(async(restoreScope=false,signal?:AbortSignal)=>{
-    const revision=scopeVersion.current,historyRequest=++historyVersion.current;
-    const body=await loadJSON<{turns:ChatTurn[];results:AnalyticsResult[];evidence?:Evidence[];scope?:QueryInput|null}>('/api/conversation',{signal});
+    const revision=scopeVersion.current,briefRevision=briefVersion.current,historyRequest=++historyVersion.current;
+    const body=await loadJSON<{turns:ChatTurn[];results:AnalyticsResult[];evidence?:Evidence[];scope?:QueryInput|null;brief?:DecisionScope|null}>('/api/conversation',{signal});
     if(signal?.aborted||historyRequest!==historyVersion.current)return;
     setTurns(body.turns||[]);
     for(const value of body.results||[])rememberResult(value);
     if(body.evidence)setEvidence(body.evidence);
+    if(briefRevision===briefVersion.current){
+      const linked=parseAnalysisSearch(routeRef.current.searchKey);
+      const matches=!routeRef.current.searchKey||(linked.ok&&linked.value.query&&body.scope&&queryIdentity(linked.value.query)===queryIdentity(body.scope));
+      if(!restoreScope||!['analyst','explore'].includes(routeRef.current.mode)||matches)setBriefScope(body.brief||null);
+    }
     if(restoreScope&&body.scope&&revision===scopeVersion.current&&!((routeRef.current.mode==='explore'||routeRef.current.mode==='analyst')&&routeRef.current.searchKey)){
       let saved=Object.values(resultsRef.current).find(value=>queryKey(value.query)===queryKey(body.scope!));
       if(!saved)saved=await loadJSON<AnalyticsResult>('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body.scope),signal});
@@ -133,6 +143,7 @@ function useWorkspaceState() {
       const value=await loadJSON<AnalyticsResult>('/api/analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request),signal:controller.signal});
       if(controller.signal.aborted||revision!==scopeVersion.current||location!==window.location.pathname+'?'+new URLSearchParams(window.location.search).toString())return;
       if(options.view&&!value.allowedViews.includes(options.view))throw new Error('This chart type is not available for the linked analysis.');
+      if(!options.fromURL)setBriefScope(null);
       setResult(value);setQuery(value.query);setPreferredView(options.view);rememberResult(value);
       if(!options.fromURL)syncResultURL(value,options.view);
       else if(queryIdentity(value.query)!==queryIdentity(request))syncResultURL(value,options.view,true);
@@ -186,6 +197,7 @@ function useWorkspaceState() {
     }catch(error){setChatError(error instanceof Error?error.message:'Unable to retrieve the earlier result.');}
   }
   function consumeEvent(event:ChatEvent) {
+    if(event.type==='brief')setBriefScope(event.scope);
     if(event.type==='status')setChatStatus(event.message);
     if(event.type==='result'){rememberResult(event.result);if(routeRef.current.mode==='analyst'){setResult(event.result);setQuery(event.result.query);setPreferredView(undefined);syncResultURL(event.result,undefined,true);}}
     if(event.type==='evidence')setEvidence(prev=>[...prev.filter(e=>!event.evidence.some(n=>n.id===e.id)),...event.evidence]);
@@ -204,7 +216,7 @@ function useWorkspaceState() {
     setTurns(prev=>[...prev,{id:-Date.now(),role:'user',content:value,createdAt:new Date().toISOString(),resultIds:[]}]);
     const controller=new AbortController();chatAbort.current=controller;let finished=false;
     try{
-      const response=await fetch('/api/analyst',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:value,context:result?.query??null}),signal:controller.signal});
+      const response=await fetch('/api/analyst',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:value,context:result?.query??null,brief:briefScope}),signal:controller.signal});
       if(!response.ok){await responseJSON(response);return;}
       if(!response.body)throw new Error('The analyst response was interrupted.');
       const reader=response.body.getReader();const decoder=new TextDecoder();let pending='';
@@ -214,18 +226,25 @@ function useWorkspaceState() {
     }catch(error){setChatError(controller.signal.aborted?'Analysis stopped. Your previous results are still available.':error instanceof Error?error.message:'The analyst could not complete this request.');}
     finally{setChatBusy(false);setChatStatus('');chatAbort.current=null;}
   }
-  async function newConversation(){if(chatBusy)return;historyVersion.current++;setNewChatBusy(true);setChatError('');try{await responseJSON(await fetch('/api/conversation',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}));setTurns([]);setEvidence([]);resultsRef.current=result?{[result.id]:result}:{};setResults(resultsRef.current);setMessage('');setHistoryReady(true);}catch(error){setChatError(error instanceof Error?error.message:'Unable to start a new conversation.');}finally{setNewChatBusy(false);}}
+  async function newConversation(){if(chatBusy)return;historyVersion.current++;setNewChatBusy(true);setChatError('');try{await responseJSON(await fetch('/api/conversation',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}));setTurns([]);setEvidence([]);setBriefScope(null);resultsRef.current=result?{[result.id]:result}:{};setResults(resultsRef.current);setMessage('');setHistoryReady(true);}catch(error){setChatError(error instanceof Error?error.message:'Unable to start a new conversation.');}finally{setNewChatBusy(false);}}
   function askAboutView(){setMode('analyst');setMessage('Explain this view. What can we conclude, and what should we be careful about?');setTimeout(()=>composer.current?.focus(),50);}
 
-  function openCatalogItem(item:CatalogItem){router.push(analysisHref('explore',{seriesIds:[item.id],topic:item.topic,sourceId:item.sourceId,geography:item.geography,measure:'reported',mode:'history'}));}
-  function openOverviewResult(value:AnalyticsResult){rememberResult(value);router.push(analysisHref('explore',value.query));}
+  function openCatalogItem(item:CatalogItem){setBriefScope(null);router.push(analysisHref('explore',{seriesIds:[item.id],topic:item.topic,sourceId:item.sourceId,geography:item.geography,measure:'reported',mode:'history'}));}
+  function openOverviewResult(value:AnalyticsResult){setBriefScope(null);rememberResult(value);router.push(analysisHref('explore',value.query));}
   function prepareQuestion(value:string){setMode('analyst');setMessage(value);setTimeout(()=>composer.current?.focus(),50);}
+
+  function openDecisionResult(value:AnalyticsResult,view?:ViewType){setBriefScope(null);rememberResult(value);router.push(analysisHref('explore',value.query,view));}
+  function askDecision(scope:DecisionScope|null,value:AnalyticsResult,text:string){
+    scopeVersion.current++;queryAbort.current?.abort();pendingQuery.current=null;
+    rememberResult(value);setResult(value);setQuery(value.query);setPreferredView(value.query.mode==='snapshot'?'metric_cards':undefined);
+    setBriefScope(scope);setMessage(text);router.push(analysisHref('analyst',value.query,value.query.mode==='snapshot'?'metric_cards':undefined));
+  }
 
   const userTurns=turns.filter(t=>t.role==='user').length;
   const activeView:ViewType=effectiveView||(result?.query.mode==='ranking'||result?.query.mode==='snapshot'?'bar':'line');
   const topic=(bootstrap?.catalog.find(c=>c.id===query.seriesIds[0]||(!query.seriesIds.length&&c.sourceId===query.sourceId&&(!query.metric||c.metric===query.metric)))?.topic||query.topic||'skills') as Topic;
 
-  return {bootstrap,loadError,mode,result,query,queryBusy,queryError,routeError,sourcesOpen,sourcesResult,turns,results,evidence,message,chatBusy,chatStatus,chatError,preferredView:effectiveView,newChatBusy,historyReady,conversationEnd,composer,userTurns,activeView,topic,setMessage,setChatError,setSourcesOpen,setSourcesResult,setMode,hrefFor,load,loadConversation,runQuery,openResult,sendMessage,newConversation,askAboutView,openCatalogItem,openOverviewResult,prepareQuestion,changeView,chatAbort,syncResultURL};
+  return {briefScope,setBriefScope,openDecisionResult,askDecision,bootstrap,loadError,mode,result,query,queryBusy,queryError,routeError,sourcesOpen,sourcesResult,turns,results,evidence,message,chatBusy,chatStatus,chatError,preferredView:effectiveView,newChatBusy,historyReady,conversationEnd,composer,userTurns,activeView,topic,setMessage,setChatError,setSourcesOpen,setSourcesResult,setMode,hrefFor,load,loadConversation,runQuery,openResult,sendMessage,newConversation,askAboutView,openCatalogItem,openOverviewResult,prepareQuestion,changeView,chatAbort,syncResultURL};
 }
 
 const WorkspaceContext=createContext<ReturnType<typeof useWorkspaceState>|null>(null);
@@ -238,10 +257,10 @@ function WorkspaceShell({children}:{children:React.ReactNode}){
   return <div className="app-shell">
     <header className="brand-header"><Link className="brand-lockup" href="/overview" aria-label="Powercoders Market Radar home"><img src="/powercoders-logo.svg" alt="Powercoders" width="553" height="65"/><span className="brand-divider" aria-hidden="true"/><span className="product-name">Market Radar</span></Link><span className="brand-purpose">Swiss IT market intelligence</span></header>
     <aside className="sidebar">
-      <div className="sidebar-nav"><span className="nav-label">WORKSPACE</span><Link className={`nav-item ${mode==='overview'?'active':''}`} aria-label="Market overview" aria-current={mode==='overview'?'page':undefined} href={hrefFor('overview')}><Activity size={19}/><span>Market overview</span></Link><Link className={`nav-item ${mode==='library'?'active':''}`} aria-label="Data library" aria-current={mode==='library'?'page':undefined} href={hrefFor('library')}><Database size={19}/><span>Data library</span></Link><Link className={`nav-item ${mode==='explore'?'active':''}`} aria-label="Explore the market" aria-current={mode==='explore'?'page':undefined} href={hrefFor('explore')}><Compass size={19}/><span>Explore the market</span></Link><Link className={`nav-item ${mode==='analyst'?'active':''}`} aria-label="AI Analyst" aria-current={mode==='analyst'?'page':undefined} href={hrefFor('analyst')}><Sparkles size={19}/><span>AI Analyst</span><span className="nav-mini-badge">AI</span></Link><Link className={`nav-item ${mode==='sources'?'active':''}`} aria-label="Sources and coverage" aria-current={mode==='sources'?'page':undefined} href="/sources"><BookOpen size={19}/><span>Sources & coverage</span></Link></div>
+      <div className="sidebar-nav"><span className="nav-label">WORKSPACE</span><Link className={`nav-item ${mode==='overview'?'active':''}`} aria-label="Market overview" aria-current={mode==='overview'?'page':undefined} href={hrefFor('overview')}><Activity size={19}/><span>Market overview</span></Link><Link className={`nav-item ${mode==='opportunities'?'active':''}`} aria-label="Graduate opportunities" aria-current={mode==='opportunities'?'page':undefined} href="/opportunities"><GraduationCap size={19}/><span>Graduate opportunities</span></Link><Link className={`nav-item ${mode==='participants'?'active':''}`} aria-label="Participant context" aria-current={mode==='participants'?'page':undefined} href="/participants"><Building2 size={19}/><span>Participant context</span></Link><Link className={`nav-item ${mode==='library'?'active':''}`} aria-label="Data library" aria-current={mode==='library'?'page':undefined} href={hrefFor('library')}><Database size={19}/><span>Data library</span></Link><Link className={`nav-item ${mode==='explore'?'active':''}`} aria-label="Explore the market" aria-current={mode==='explore'?'page':undefined} href={hrefFor('explore')}><Compass size={19}/><span>Explore the market</span></Link><Link className={`nav-item ${mode==='analyst'?'active':''}`} aria-label="AI Analyst" aria-current={mode==='analyst'?'page':undefined} href={hrefFor('analyst')}><Sparkles size={19}/><span>AI Analyst</span><span className="nav-mini-badge">AI</span></Link><Link className={`nav-item ${mode==='sources'?'active':''}`} aria-label="Sources and coverage" aria-current={mode==='sources'?'page':undefined} href="/sources"><BookOpen size={19}/><span>Sources & coverage</span></Link></div>
       <div className="sidebar-bottom"><div className="sidebar-note"><span className="sidebar-note-icon"><FileCheck2 size={19}/></span><strong>Evidence comes first.</strong><p>Every chart starts with verified data. Every conclusion keeps its source.</p></div><div className="workspace-person"><div><strong>Powercoders</strong><span>Programme workspace</span></div></div></div>
     </aside>
-    <main className="main-shell"><header className="topbar"><div className="breadcrumb">Workspace <span>/</span> <strong>{MODE_COPY[mode].label}</strong></div><div className="topbar-right"><span className="verified-label"><FileCheck2 size={15}/>Verified data</span><span className="country-label"><span className="swiss-flag">+</span>Switzerland</span></div></header>
+    <main className="main-shell"><header className="topbar"><div className="breadcrumb">Workspace <span>/</span> <strong>{MODE_COPY[mode].label}</strong></div><div className="topbar-right"><span className="verified-label"><FileCheck2 size={15}/>Verified data</span></div></header>
       {!bootstrap||!result?<div className="initial-state">{loadError?<><CircleAlert size={32}/><h1>We couldn’t load the workspace</h1><p>{loadError}</p><Button onClick={()=>void load()}><RefreshCw size={16}/>Try again</Button></>:<><span className="loading-radar"><Radar size={42}/></span><h1>Opening your market workspace</h1><p>Loading verified indicators and their sources…</p><div className="skeleton-row"><span/><span/><span/></div></>}</div>:<>
       <section className="page-heading"><div><div className="eyebrow">YOUR SWISS IT MARKET WORKSPACE</div><h1>{MODE_COPY[mode].title}</h1><p>{MODE_COPY[mode].description}</p></div><div className="heading-switch segmented"><button className={mode==='explore'?'selected':''} onClick={()=>setMode('explore')} aria-pressed={mode==='explore'}><SlidersHorizontal size={16}/>Explore</button><button className={mode==='analyst'?'selected':''} onClick={()=>setMode('analyst')} aria-pressed={mode==='analyst'}><Sparkles size={16}/>AI Analyst</button></div></section>
       {routeError&&<div className="notice notice-error" role="alert"><CircleAlert size={18}/><div><strong>This analysis link could not be opened.</strong><p>{routeError} The previous verified view remains available.</p><button className="text-button" onClick={()=>syncResultURL(result,preferredView,true)}>Use the current verified view</button></div></div>}
@@ -256,7 +275,7 @@ function WorkspaceShell({children}:{children:React.ReactNode}){
 export function OverviewScreen(){
   const {bootstrap,result,setSourcesOpen,setSourcesResult,setMode,openOverviewResult,prepareQuestion}=useWorkspace();
   if(!bootstrap||!result)return null;
-  return <MarketOverview inventory={bootstrap.inventory} panels={bootstrap.marketOverview} onOpen={openOverviewResult} onSources={value=>{setSourcesResult(value);setSourcesOpen(true);}} onLibrary={()=>setMode('library')} onAsk={prepareQuestion}/>;
+  return <><div className="decision-entry"><Link href="/opportunities"><strong>Graduate opportunities →</strong><span>Investigate roles, junior signals and the evidence needed for programme decisions.</span></Link><Link href="/participants"><strong>Participant context →</strong><span>Understand SEM population and employment figures by status group and canton.</span></Link></div><MarketOverview inventory={bootstrap.inventory} panels={bootstrap.marketOverview} onOpen={openOverviewResult} onSources={value=>{setSourcesResult(value);setSourcesOpen(true);}} onLibrary={()=>setMode('library')} onAsk={prepareQuestion}/></>;
 }
 
 export function LibraryScreen(){
@@ -276,10 +295,11 @@ export function ExploreScreen(){
 }
 
 export function AnalystScreen(){
-  const {bootstrap,result,query,turns,results,evidence,message,chatBusy,chatStatus,chatError,preferredView,newChatBusy,conversationEnd,composer,userTurns,activeView,setMessage,setChatError,setSourcesOpen,setMode,loadConversation,openResult,sendMessage,newConversation,changeView,chatAbort}=useWorkspace();
+  const {briefScope,setBriefScope,bootstrap,result,query,turns,results,evidence,message,chatBusy,chatStatus,chatError,preferredView,newChatBusy,conversationEnd,composer,userTurns,activeView,setMessage,setChatError,setSourcesOpen,setMode,loadConversation,openResult,sendMessage,newConversation,changeView,chatAbort}=useWorkspace();
   if(!bootstrap||!result)return null;
   return <><div className="workspace-data-access"><Database size={16}/><span>ITBoard · Eurostat · BFS · SECO · SEM · regional sources</span><Link className="text-button" href="/library">Browse all {bootstrap.inventory.counts.series} indicators</Link></div>
         {!bootstrap.aiAvailable&&<div className="notice notice-setup"><Info size={18}/><div><strong>Your analyst is ready for an API connection.</strong><p>AI conversations will be available once the server connection is configured. All manual data exploration remains available.</p></div><Button variant="outline" size="sm" onClick={()=>setMode('explore')}>Keep exploring</Button></div>}
+        {briefScope&&<div className="decision-context"><BookOpen size={16}/><span>Decision context: {briefScope.kind==='opportunities'?'Graduate opportunities':`Participant context · ${briefScope.group==='all'?'All groups, separately':PARTICIPANT_GROUPS[briefScope.group as keyof typeof PARTICIPANT_GROUPS]?.label}`} · {geographyLabel(briefScope.geography||'CH')}{briefScope.role?` · ${bootstrap.catalog.find(item=>item.id===briefScope.role)?.label||'Selected role'}`:''}</span><button className="text-button" onClick={()=>setBriefScope(null)}>Use chart only</button></div>}
         <div className="analyst-layout"><section className="conversation-card"><div className="conversation-header"><div><span className="analyst-avatar"><Sparkles size={18}/></span><div><h2>AI Analyst</h2><span>Evidence-led, question by question</span></div></div><Button size="icon" variant="ghost" disabled={chatBusy||newChatBusy} onClick={()=>void newConversation()} title="Start a new conversation" aria-label="Start a new conversation">{newChatBusy?<LoaderCircle size={17} className="spin"/>:<Plus size={18}/>}</Button></div>
           <div className="context-strip"><History size={14}/><span>{userTurns?`${userTurns} ${userTurns===1?'question':'questions'} in this conversation`:'Context for 20+ follow-up questions'}</span><span className="context-scope">{geographyLabel(result.query.geography)}</span></div>
           <div className="conversation-body" aria-live="polite" aria-relevant="additions text">
@@ -289,8 +309,14 @@ export function AnalystScreen(){
             <div ref={conversationEnd}/>
           </div>
           <form className="composer" onSubmit={(event:FormEvent)=>{event.preventDefault();void sendMessage();}}><label className="sr-only" htmlFor="analyst-question">Ask the AI Analyst</label><textarea ref={composer} id="analyst-question" placeholder={turns.length?'Ask a follow-up…':'Ask anything about the available market data…'} value={message} onChange={e=>setMessage(e.target.value)} maxLength={4000} rows={2} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void sendMessage();}}}/><div className="composer-bottom"><span><Layers3 size={13}/>Current view included</span>{chatBusy?<Button type="button" size="sm" variant="outline" onClick={()=>chatAbort.current?.abort()}><Square size={12}/>Stop</Button>:<Button type="submit" size="sm" disabled={!message.trim()||!bootstrap.aiAvailable}><Send size={15}/>Ask analyst</Button>}</div></form>
-        </section><div className="analyst-canvas"><div className="canvas-heading"><div><span className="eyebrow">CONNECTED WORKSPACE</span><h3>Your working view</h3></div><Button variant="outline" size="sm" onClick={()=>setMode('explore')}><SlidersHorizontal size={14}/>Explore this view</Button></div><div className="scope-chips"><span><span className="swiss-mini">+</span>{geographyLabel(result.query.geography)}</span><span>{result.query.measure==='share'?'Share / rate':result.query.measure==='count'?'Count':'Reported values'}</span>{result.series.slice(0,3).map(s=><span key={s.id}>{s.label}</span>)}</div><ResultView result={result} onSources={()=>setSourcesOpen(true)} compact preferredView={preferredView} onViewChange={changeView}/><div className="connected-note"><FileCheck2 size={16}/><p>Charts and answers use the same verified results. Open any referenced view in the conversation to revisit it.</p></div>{turns.length>0&&!chatBusy&&<div className="followup-suggestions"><span>Keep exploring</span>{['Compare with Docker.','What are the limitations?','And for junior roles?'].map(text=><button key={text} onClick={()=>void sendMessage(text)} disabled={!bootstrap.aiAvailable}>{text}</button>)}</div>}</div></div>
+        </section><div className="analyst-canvas"><div className="canvas-heading"><div><span className="eyebrow">CONNECTED WORKSPACE</span><h3>Your working view</h3></div><Button variant="outline" size="sm" onClick={()=>setMode('explore')}><SlidersHorizontal size={14}/>Explore this view</Button></div><div className="scope-chips"><span><span className="swiss-mini">+</span>{geographyLabel(result.query.geography)}</span><span>{result.query.measure==='share'?'Share / rate':result.query.measure==='count'?'Count':'Reported values'}</span>{result.series.slice(0,3).map(s=><span key={s.id}>{s.label}</span>)}</div><ResultView result={result} onSources={()=>setSourcesOpen(true)} compact preferredView={preferredView} onViewChange={changeView}/><div className="connected-note"><FileCheck2 size={16}/><p>Charts and answers use the same verified results. Open any referenced view in the conversation to revisit it.</p></div>{turns.length>0&&!chatBusy&&<div className="followup-suggestions"><span>Keep exploring</span>{(briefScope?.kind==='participants'||result.series.some(series=>series.id.startsWith('sem_'))?['What about Bern canton?','What does the denominator include?','Can we see a trend?']:briefScope?.kind==='opportunities'?['What do we know about junior roles?','Which skills can we verify?','What should we check with employers?']:query.topic==='skills'||result.series.some(series=>series.id.includes('python'))?['Compare with Docker.','What are the limitations?','And for junior roles?']:['What are the limitations?','What changed over time?','Which other sources add context?']).map(text=><button key={text} onClick={()=>void sendMessage(text)} disabled={!bootstrap.aiAvailable}>{text}</button>)}</div>}</div></div>
 </>;
+}
+
+export function DecisionScreen({kind}:{kind:DecisionScope['kind']}){
+  const {bootstrap,openDecisionResult,askDecision,setSourcesOpen,setSourcesResult}=useWorkspace();
+  if(!bootstrap)return null;
+  return <DecisionWorkspace kind={kind} catalog={bootstrap.catalog} onExplore={openDecisionResult} onAsk={askDecision} onSources={result=>{setSourcesResult(result);setSourcesOpen(true);}}/>;
 }
 
 export function SourcesScreen(){

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { querySchema, type QueryInput, type QuerySpec, type ViewType } from './contracts';
 
 export const WORKSPACE_ROUTES = {
-  overview:'/overview', library:'/library', explore:'/explore', analyst:'/analyst', sources:'/sources',
+  overview:'/overview', opportunities:'/opportunities', participants:'/participants', library:'/library', explore:'/explore', analyst:'/analyst', sources:'/sources',
 } as const;
 export type WorkspaceMode = keyof typeof WORKSPACE_ROUTES;
 export function workspaceMode(pathname:string):WorkspaceMode {
