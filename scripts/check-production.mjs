@@ -89,6 +89,16 @@ try {
   }
   report.checks.push({name:phase,status:'passed',queries:queries.length});
 
+  phase='decision workspace parity';
+  for(const scope of [{kind:'opportunities',role:'itboard_csv_rolle_data-analyst'},{kind:'participants',group:'all',geography:'CH'},{kind:'participants',group:'f',geography:'CH-BE'}]){
+    const expected=await json(local,'/api/decision-brief',{method:'POST',body:scope});
+    const actual=await json(production,'/api/decision-brief',{method:'POST',body:scope});
+    equal(actual,expected,`${scope.kind}: decision panel values, scopes and sources`);
+  }
+  await request(production,'/api/decision-brief',{method:'POST',body:{kind:'participants',role:'python'},status:400});
+  await request(production,'/api/decision-brief',{method:'POST',body:{kind:'participants'},headers:{origin:'https://untrusted.example'},status:403});
+  report.checks.push({name:phase,status:'passed',briefs:3,invalidParameters:400,crossOrigin:403});
+
   phase='saved query and result retrieval';
   for(const origin of [local,production]){
     const saved=await json(origin,`/api/conversation?resultId=${sessions[origin].lastResultId}`);
