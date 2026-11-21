@@ -1,0 +1,45 @@
+/* Source: Figma Style Guide, Page 3. Accessible derivatives are named by purpose. */
+:root {
+  --brand-red: #c32e4c;
+  --brand-teal: #6dbdb2;
+  --brand-mint: #b6f6c7;
+  --brand-gray: #9d9c9c;
+  --brand-charcoal: #333333;
+  --brand-ink: #141617;
+  --brand-white: #ffffff;
+  --brand-cloud: #f6f6f6;
+
+  --background: var(--brand-cloud);
+  --surface: var(--brand-white);
+  --surface-muted: var(--brand-cloud);
+  --foreground: var(--brand-ink);
+  --text-secondary: var(--brand-charcoal);
+  --muted: #626864;
+  --line: #dfe4e1;
+  --control-border: #89928d;
+  --sidebar: var(--surface);
+  --accent: var(--brand-red);
+  --accent-hover: #a3233d;
+  --accent-soft: #fae9ed;
+  --accent-tint: #fff7f9;
+  --accent-border: #e8b8c3;
+  --accent-muted: #d78c9c;
+  --teal-ink: #266e65;
+  --teal-soft: #eaf6f3;
+  --teal-border: #b5d9d2;
+  --mint-ink: #366343;
+  --mint-soft: #edf9f0;
+  --mint-border: #c2e5cc;
+  --warning-bg: var(--surface-muted);
+  --warning-text: var(--text-secondary);
+  --warning-border: var(--line);
+  --chart-1: var(--brand-red);
+  --chart-2: #367f76;
+  --chart-3: var(--brand-charcoal);
+  --chart-4: #4a7a56;
+  --chart-grid: var(--line);
+  --radius: 16px;
+  --font-sans: 'Roboto', Arial, sans-serif;
+  --font-ui: 'Inter', 'Roboto', Arial, sans-serif;
+  --font-display: 'Bebas Neue', 'Roboto', Arial, sans-serif;
+}

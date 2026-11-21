@@ -1,37 +1,49 @@
-# Market Radar design and interaction QA
+# Brand integration QA — 21 November 2026
 
-## Brand adaptation
+final result: passed
 
-The supplied 1672 × 941 reference image was used for the Powercoders header, logo treatment and red accent. Its illustrative numbers, candidate-matching cards and other unsupported features were not imported into the analytical product.
+## Target and evidence
 
-The original logo artwork comes from the [Powercoders SVG asset](https://powercoders.org/wp-content/uploads/2022/10/powercoders-logo-1.svg). Its proportions are preserved. The white full-width header combines the wordmark, a divider and the Market Radar name. Neutral surfaces and charcoal text support a crimson primary accent.
+Source: [Figma style guide](https://www.figma.com/design/BTJyKElyB9D22WopZHT8Ga/Hackaton-Bern-AI-for-Access-26?node-id=10048-35371). The public canvas was inspected directly: palette page 3 (`10048-35377`), typography pages 5–10 (heading frame `10048-35430`). This is a style guide, not a layout mockup of this application. Fidelity means colour and type roles, with the existing analytical information architecture and larger readable text retained.
 
-Chart and filter colors use the same comparison palette: `#b51235`, `#526a92`, `#aa762a` and `#23847d`. Distinct colors remain available for multi-series comparisons; the selected topic and primary actions use crimson.
+Local capture directory: ignored `test-results/brand/` (not distributed in a clean clone).
 
-The current type scale is defined in `src/app/typography.css`: prominent 32–44 px page headings, 16 px analytical prose, larger form controls and 13–14 px evidence labels. Mobile overview cards use one column so their text remains readable. Source captions and limitations retain sufficient size to be useful, rather than becoming decorative fine print.
+- Source truth: `figma-brand-palette.png`, `figma-type-headings.png`, `figma-type-kpi-cards.png`, `figma-type-body.png`, `figma-type-data-navigation.png`, `figma-type-actions.png`.
+- Rendered desktop: `brand-overview-desktop.png`, `brand-explorer-bars.png`, `brand-opportunities-desktop.png`, `brand-participants-desktop.png`, `brand-analyst-desktop.png`, `brand-library-desktop.png`.
+- Rendered mobile: `brand-overview-mobile.png`, `brand-participants-mobile.png`, `brand-analyst-mobile.png`, `brand-compare-mobile.png`, `brand-library-mobile.png`.
 
-The completed brand review covered Explorer and AI Analyst desktop views, a 390 × 844 mobile viewport, navigation, preserved conversation content, evidence links and the connected chart. The final review found no horizontal mobile overflow or browser errors. Build and TypeScript checks passed for that change. This was a scoped brand adaptation, not a pixel-perfect reproduction of the entire reference dashboard.
+Implementation: Next.js development preview at `http://127.0.0.1:3002`, followed by the local production build. Desktop CSS viewport/captures: 1280 × 720; mobile: 390 × 844, 1× image density. Source captures: 1280 × 720, with Figma at 100% for the palette and 77% for typography. Canvas chrome and guide frame padding are excluded from fidelity judgments; stated font specifications and font shapes, not scaled sample dimensions, define the target. No whole-page pixel equality is claimed.
 
-## Multi-source workspace
+Source palette and heading captures were compared with the rendered overview in the same comparison input. Body/data/navigation captures were compared with the rendered Explorer and Analyst in a second combined input. These legible specification frames and focused chart screenshots supply the detailed comparisons; separate image crops were unnecessary.
 
-The full-data integration added a multi-source overview, searchable Data library, source provenance and explicit national versus regional coverage. Browser checks covered the six overview cards, national library, BFS/SEM/Eurostat exploration, a regional transition, source details and mobile layout. Local screenshots were generated as test artifacts and are not included in the repository.
+## Findings and iteration
 
-The subsequent source-selector review found a valid data limitation presented with insufficient explanation: named skill trends have ITBoard evidence only, but the old topic-filtered selector concealed the other datasets. It also identified Eurostat occupational groups filed only under Market context and inconsistent behavior around incompatible rankings and failed filter changes.
+- Resolved: snapshot bars previously shared one fill while their legend distinguished indicators. Each comparison bar now uses its series colour; the two visible Python/Docker bars and legend dots were checked in the browser and have identical corresponding computed colours.
+- Resolved: long source-card headings could inherit a generic heading style. They now explicitly use Roboto Bold at 18 px; the Sources page was recaptured and inspected at desktop width.
+- Accepted adaptation: body text remains 16 px with generous leading rather than the guide's 14/16 specification. Page headings and section titles use the guide's Bebas Neue family at the existing product's responsive scale.
+- Accepted adaptation: chart teal/mint and small text use darker derivatives to preserve contrast; original teal/mint remain present in badges and analyst identity.
+- No outstanding P0/P1/P2 visual findings in the inspected states.
 
-The resulting interaction design is:
+## Required fidelity surfaces
 
-- Show all 10 source datasets in the Source selector, grouping current-topic sources separately from sources that require a topic switch.
-- Explain each topic's data coverage; do not imply that every source supplies named skill trends.
-- Include Eurostat occupational shares under Roles, with percentage-aware measures and no invented counts.
-- Provide a primary Choose indicator control independently of the compatible-comparison picker.
-- Replace Compare with a specific explanation when there is no compatible alternative. Show only compatible options in the picker, with an explicit four-series limit and removal controls.
-- Hide unsupported rankings and preserve the last successful chart and filters if a request fails.
-- Clear an incompatible regional-only source filter when the library returns to national coverage.
+| Surface | Result |
+| --- | --- |
+| Fonts and typography | Bebas Neue display/metrics, Roboto reading/data, Inter controls/navigation verified visually and through computed styles. Long titles wrap; Russian composer text remains readable. |
+| Spacing and layout rhythm | Existing grid, cards, padding, radii and responsive stacking retained. Desktop and 390 px pages do not overflow the document horizontally; navigation and data tables keep their intentional internal scrolling. |
+| Colours and tokens | Exact guide palette is centralized. Action, focus, badge and chart states share semantic tokens. Key text contrast >4.5:1, chart/white >4.7:1, control/white >3:1. |
+| Image quality and assets | Existing original vector logo paths retained; only red/charcoal fills adapted. No raster approximation or substituted logo. |
+| Copy and content | Existing English UI, source labels, dates, units, limitations and result values retained. No guide sample copy leaked into the product. |
 
-See [Validation](docs/VALIDATION.md) for the current automated, browser and live-AI checks. Numeric results come from the deterministic backend. Browser transport simulations are distinguished from actual LLM calls. Screenshots remain local test artifacts.
+## Interactions and limits
 
-## Repeating QA
+Desktop checks included role selection, SEM group/canton selection, handoff to Analyst, Python/Docker snapshots, chart/table switching, source details and library search. Mobile checks included the overview, long participant labels, group/canton filters, Analyst composer with Cyrillic, Explorer source/topic controls and comparison picker. Loading and unconfigured-AI states were visible in staging. No browser runtime errors were recorded.
 
-Run TypeScript and unit checks, build the app, start it locally and run the API smoke check. Run `node scripts/qa-explorer.mjs`, `node scripts/qa-full-data-ui.mjs`, `node scripts/qa-analyst-workspace.mjs` and `node scripts/qa-comparison-ui.mjs` with `MARKET_RADAR_TEST_URL` pointing to the app. Installed Chrome is the default browser; override it with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` or `PLAYWRIGHT_CHANNEL` when needed. Allow the request-rate window to clear before repeating the full suites.
+Staging deliberately has no provider key; its unavailable-AI notice is expected. This styling pass does not re-run the previous eight-question model acceptance or the simulated 20-follow-up test. The earlier accepted analytical behavior remains documented in `docs/VALIDATION.md`; production build/deployment checks are recorded there separately.
 
-Review the source menu from Skills, open an official Roles source and a contextual source, switch to a regional-only source, choose another indicator, and verify a compatible comparison. Check that invalid date requests preserve the prior successful view, and repeat the navigation at mobile width. Source, period, unit, selected indicator and chart values must remain consistent throughout.
+## Implementation checklist
+
+- [x] Shared palette, type roles and responsive size adaptations.
+- [x] Self-hosted fonts with source hashes, licences and subset loading.
+- [x] Chart/legend agreement and distinguishable line patterns.
+- [x] Combined source/rendered visual comparison and mobile review.
+- [x] Original vector artwork and analytical copy preserved.

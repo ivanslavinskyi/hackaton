@@ -1,2 +1,5 @@
 Powercoders logo: https://powercoders.org/wp-content/uploads/2022/10/powercoders-logo-1.svg
 Original artwork retrieved 2026-11-21; used for the Powercoders hackathon workspace.
+
+Palette update 2026-11-21: logo colours aligned with the supplied Figma Style Guide (#C32E4C / #333333); original paths preserved.
+Reference: https://www.figma.com/design/BTJyKElyB9D22WopZHT8Ga/Hackaton-Bern-AI-for-Access-26?node-id=10048-35371

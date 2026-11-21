@@ -1,0 +1,66 @@
+/* Figma type roles, adapted to the existing readable analytical workspace. */
+body {font-family:var(--font-sans);font-size:16px;line-height:1.6;}
+button,input,select,textarea,.nav-item,.breadcrumb,.eyebrow,.nav-label,
+.brand-purpose,.verified-label,.filter-field,.measure-field,.library-filter,
+.decision-controls label,.result-subtitle,.result-source-strip,.participant-source,
+.participant-date,.workspace-footer,.workspace-person span {
+  font-family:var(--font-ui);
+}
+.page-heading h1,.initial-state h1 {
+  font-family:var(--font-display);font-size:clamp(36px,3.4vw,48px);
+  font-weight:400;line-height:1.12;letter-spacing:.005em;color:var(--foreground);
+}
+.product-name {font-family:var(--font-display);font-size:32px;font-weight:400;letter-spacing:.015em;}
+.overview-section-heading h2,.library-source-heading h2,.library-results-heading h2,
+.decision-intro h2,.decision-panel-intro h2,.participant-group h2,.decision-bottom h2,
+.drawer-header h2 {
+  font-family:var(--font-display);font-size:28px;font-weight:400;line-height:1.3;letter-spacing:.01em;
+}
+.result-header h2,.overview-chart-grid .result-header h2,.source-signal h2,
+.source-directory .source-card h2,.source-card h3,.side-card h3,.ask-card h3,
+.conversation-header h2,.canvas-heading h3,.library-evidence-grid h3 {
+  font-family:var(--font-sans);font-size:18px;font-weight:700;line-height:1.4;letter-spacing:0;
+}
+.source-signal-value,.latest-number,.participant-metric strong,.stat-value,
+.library-stats>div>strong {
+  font-family:var(--font-display);font-size:48px;font-weight:400;line-height:1.05;letter-spacing:0;
+  font-variant-numeric:tabular-nums;
+}
+.source-signal-value span,.latest-number small,.library-stats>div:last-child strong {
+  font-family:var(--font-ui);font-size:14px;font-weight:500;line-height:1.5;letter-spacing:0;
+}
+.nav-item {font-weight:500;}
+.button,.text-button,.segmented button {font-weight:600;}
+.data-table,.library-table,.latest-readout,.chart-legend,.recharts-wrapper {
+  font-family:var(--font-sans);font-variant-numeric:tabular-nums;
+}
+.verified-label {background:var(--brand-mint);color:var(--mint-ink);padding:5px 9px;border-radius:6px;}
+.analyst-avatar,.sidebar-note-icon,.ask-icon {background:var(--brand-teal);color:var(--foreground);}
+.brand-divider {background:var(--brand-gray);}
+.sidebar-note {background:var(--teal-soft);border-color:var(--teal-border);}
+.sidebar-note strong {color:var(--teal-ink);}
+.sidebar-note p {color:var(--text-secondary);}
+.nav-mini-badge {background:var(--brand-mint);color:var(--mint-ink);}
+.participant-date {background:var(--mint-soft);color:var(--mint-ink);}
+.participant-metric meter {accent-color:var(--chart-2);}
+.participant-metric meter::-webkit-meter-optimum-value {background:var(--chart-2);}
+.participant-metric meter::-moz-meter-bar {background:var(--chart-2);}
+.decision-note {border:1px solid var(--line);}
+.decision-note>svg {color:var(--accent);}
+.select-wrap select,.library-filter select,.decision-controls select,.period-controls input {
+  border-color:var(--control-border);
+}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible {
+  outline:2px solid var(--accent);outline-offset:3px;
+}
+input::placeholder,textarea::placeholder {color:var(--muted);opacity:1;}
+.recharts-cartesian-axis-tick text {font-family:var(--font-sans);}
+@media(max-width:650px) {
+  .product-name {font-size:24px;}
+  .page-heading h1 {font-size:36px;}
+  .source-signal h2 {font-size:16px;}
+  .source-signal-value,.latest-number,.participant-metric strong,.library-stats>div>strong {font-size:40px;}
+  .source-signal-value span,.library-stats>div:last-child strong {font-size:13px;}
+  .overview-section-heading h2,.library-source-heading h2,.library-results-heading h2,
+  .decision-intro h2,.decision-panel-intro h2,.participant-group h2,.decision-bottom h2 {font-size:26px;}
+}

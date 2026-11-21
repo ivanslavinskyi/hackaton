@@ -20,11 +20,13 @@ Named skill trends currently come **only from ITBoard**. Eurostat occupational g
 
 Compare appears only when the current selection has compatible alternatives. Otherwise the Explorer explains the single-indicator view and keeps the main indicator selector available. Comparison menus show compatible options only and explicitly explain the four-series limit. The shared typography uses larger headings, readable body text and responsive filter, table and evidence labels.
 
+The shared [design system](docs/DESIGN-SYSTEM.md) follows the supplied Powercoders Figma palette and font roles: Bebas Neue for display text, Roboto for reading/data, and Inter for controls. Fonts are self-hosted, with licences and provenance included. Red, teal and mint accents apply consistently across every page, chart and AI evidence view.
+
 ## Pages and shareable analysis
 
 The workspace has dedicated routes: `/overview`, `/opportunities`, `/participants`, `/library`, `/explore`, `/analyst` and `/sources`. `/` redirects to the overview. Explorer filters and chart selection are encoded in the URL; library links retain search and filters. Direct links, reload and browser Back/Forward restore the corresponding view.
 
-The shared layout preserves the conversation, unsent question and in-flight AI analysis while switching pages. A selected decision brief is saved before opening AI, even before the first question. ìUse chart onlyî and explicit manual evidence changes clear that decision context persistently. Shared links contain public analytical filters only, never private chat history. See [Routing](docs/ROUTING.md) for parameters, privacy and recovery behavior.
+The shared layout preserves the conversation, unsent question and in-flight AI analysis while switching pages. A selected decision brief is saved before opening AI, even before the first question. ‚ÄúUse chart only‚Äù and explicit manual evidence changes clear that decision context persistently. Shared links contain public analytical filters only, never private chat history. See [Routing](docs/ROUTING.md) for parameters, privacy and recovery behavior.
 
 ## Data coverage
 

@@ -1,6 +1,6 @@
 /* A readable type scale shared by the manual and AI workspaces. */
 body {font-size:16px;line-height:1.6;}
-.page-heading h1 {font-size:clamp(2rem,3.2vw,2.75rem);font-weight:720;line-height:1.12;letter-spacing:-.045em;color:#20222d;}
+.page-heading h1 {font-size:clamp(2rem,3.2vw,2.75rem);font-weight:720;line-height:1.12;letter-spacing:-.045em;color:var(--foreground);}
 .page-heading p {font-size:1rem;line-height:1.65;max-width:760px;}
 .page-heading .eyebrow,.eyebrow,.result-header .eyebrow,.side-card .eyebrow,.canvas-heading .eyebrow {font-size:.75rem;font-weight:650;letter-spacing:.1em;}
 .breadcrumb,.topbar-right,.brand-purpose {font-size:.875rem;}
@@ -18,7 +18,7 @@ body {font-size:16px;line-height:1.6;}
 .filter-row {flex-wrap:wrap;}
 .filter-field {min-width:165px;}
 .source-field {min-width:230px;}
-.filter-field>span:first-child,.measure-field>span,.library-filter>span {font-size:.875rem;font-weight:550;color:#555a69;}
+.filter-field>span:first-child,.measure-field>span,.library-filter>span {font-size:.875rem;font-weight:550;color:var(--text-secondary);}
 .select-wrap select,.library-filter select {font-size:.9375rem;height:44px;}
 .indicator-control-row>p,.explorer-coverage,.explorer-coverage p {font-size:.875rem;line-height:1.7;}
 .explorer-coverage span,.explorer-coverage>.text-button {font-size:.8125rem;}
