@@ -40,6 +40,8 @@ Desktop checks included role selection, SEM group/canton selection, handoff to A
 
 Staging deliberately has no provider key; its unavailable-AI notice is expected. This styling pass does not re-run the previous eight-question model acceptance or the simulated 20-follow-up test. The earlier accepted analytical behavior remains documented in `docs/VALIDATION.md`; production build/deployment checks are recorded there separately.
 
+Post-deployment evidence: `brand-local-production.png`, `brand-production-desktop.png` and `brand-production-mobile.png` in the same ignored capture directory. The public site reproduced the local font roles, exact accent/background tokens and mobile layout. Its preloaded fonts returned 200/`font/woff2`, the browser reported no runtime errors, and local/production analytical parity passed. These captures use the same 1280 × 720 and 390 × 844 viewports.
+
 ## Implementation checklist
 
 - [x] Shared palette, type roles and responsive size adaptations.
